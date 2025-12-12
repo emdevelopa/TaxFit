@@ -9,6 +9,8 @@ import Select from '@/components/common/Select';
 import Button from '@/components/common/Button';
 import { useRegister } from '@/hooks/auth/use-auth';
 import { registerSchema } from '@/lib/validations';
+import Footer from '@/components/layout/Footer';
+import { Header } from '@/components/layout';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -38,6 +40,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Header/>
       <div className="container mx-auto px-6 md:px-12 lg:px-16">
         <div className="min-h-screen flex items-center justify-center py-16">
           <div className="w-full max-w-2xl">
@@ -189,6 +192,7 @@ export default function RegisterPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

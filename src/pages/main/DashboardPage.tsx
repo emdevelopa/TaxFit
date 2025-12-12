@@ -5,6 +5,8 @@ import { TrendingUp, DollarSign, FileText, Loader2 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Avatar from '@/components/common/Avatar';
 import { formatCurrency } from '@/utils/helpers';
+import Footer from '@/components/layout/Footer';
+import { Header } from '@/components/layout';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();

@@ -1,12 +1,12 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle, ArrowRight } from 'lucide-react';
 import { otpVerificationSchema, OtpVerificationInput } from '@/lib/validations';
 import { useVerifyEmail, useResendOtp } from '@/hooks/auth/use-auth';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
-import { string } from 'zod';
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -16,11 +16,12 @@ export default function VerifyEmailPage() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
   } = useForm<OtpVerificationInput>({
     resolver: zodResolver(otpVerificationSchema),
     defaultValues: {
-      email: string,
+      email: email,
+      otp: '',
+      type: 'email_verification',
     },
   });
 
@@ -28,63 +29,114 @@ export default function VerifyEmailPage() {
   const resendOtpMutation = useResendOtp();
 
   const onSubmit = (data: OtpVerificationInput) => {
+    console.log('🚀 Verifying email:', data);
     verifyEmailMutation.mutate(data);
   };
 
   const handleResend = () => {
     if (email) {
-      resendOtpMutation.mutate({ email });
+      console.log('🔄 Resending OTP to:', email);
+      resendOtpMutation.mutate({ 
+        email,
+        type: 'email_verification' 
+      });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-6 md:px-12 lg:px-16">
+        <div className="min-h-screen flex items-center justify-center py-16">
+          <div className="w-full max-w-md">
+            {/* Icon */}
+            <div className="mb-8 flex justify-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </div>
+
+            {/* Header */}
+            <div className="mb-12 space-y-6 text-center">
+              <div className="flex items-center justify-center gap-4">
+                <div className="h-px w-12 bg-primary-500"></div>
+                <span className="text-xs uppercase tracking-[0.3em] text-gray-500 font-light">
+                  Email Verification
+                </span>
+                <div className="h-px w-12 bg-primary-500"></div>
+              </div>
+
+              <h1 className="text-5xl md:text-6xl font-extralight text-gray-900 tracking-tight leading-tight">
+                Verify your
+                <br />
+                <span className="italic font-light text-primary-600">email</span>
+              </h1>
+
+              <p className="text-lg text-gray-600 font-light leading-relaxed">
+                We've sent a verification code to
+                <br />
+                <span className="font-medium text-gray-900">{email}</span>
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Hidden fields */}
+              <input type="hidden" {...register('email')} value={email} />
+              <input type="hidden" {...register('type')} value="email_verification" />
+
+              {/* OTP Input */}
+              <div>
+                <Input
+                  label="Enter 6-digit code"
+                  type="text"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="text-center text-2xl tracking-widest font-light"
+                  error={errors.otp?.message}
+                  {...register('otp')}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-secondary-900 hover:bg-secondary-800 text-white group"
+                disabled={verifyEmailMutation.isPending}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  {verifyEmailMutation.isPending ? 'Verifying...' : 'Verify Email'}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </form>
+
+            {/* Resend */}
+            <div className="mt-8 p-6 bg-gray-50 border border-gray-200 text-center">
+              <p className="text-sm text-gray-600 font-light mb-3">
+                Didn't receive the code? Check your spam folder or request a new code.
+              </p>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendOtpMutation.isPending}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:opacity-50"
+              >
+                {resendOtpMutation.isPending ? 'Sending...' : 'Resend verification code'}
+              </button>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 pt-8 border-t border-gray-200 text-center">
+              <Link
+                to="/login"
+                className="text-sm text-gray-600 hover:text-primary-600 font-light"
+              >
+                Back to sign in
+              </Link>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Verify Your Email</h2>
-          <p className="text-gray-600">
-            We've sent a verification code to<br />
-            <span className="font-medium text-gray-900">{email}</span>
-          </p>
         </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input
-            label="Enter 6-digit code"
-            type="text"
-            maxLength={6}
-            placeholder="000000"
-            className="text-center text-2xl tracking-widest"
-            error={errors.otp?.message}
-            {...register('otp')}
-          />
-
-          <Button
-            type="submit"
-            fullWidth
-            size="lg"
-            isLoading={verifyEmailMutation.isPending}
-          >
-            Verify Email
-          </Button>
-
-          <div className="text-center text-sm text-gray-600">
-            Didn't receive the code?{' '}
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resendOtpMutation.isPending}
-              className="text-primary-500 hover:text-primary-600 font-medium disabled:opacity-50"
-            >
-              {resendOtpMutation.isPending ? 'Sending...' : 'Resend'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );

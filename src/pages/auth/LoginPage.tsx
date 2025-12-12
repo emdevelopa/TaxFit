@@ -8,6 +8,8 @@ import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import { useLogin } from '@/hooks/auth/use-auth';
 import { loginSchema } from '@/lib/validations';
+import Footer from '@/components/layout/Footer';
+import { Header } from '@/components/layout';
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
@@ -30,6 +32,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Header/>
       <div className="container mx-auto px-6 md:px-12 lg:px-16">
         <div className="min-h-screen flex items-center justify-center py-16">
           <div className="w-full max-w-md">
@@ -125,6 +128,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

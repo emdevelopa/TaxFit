@@ -19,14 +19,17 @@ import {
   ProfileResponse,
 } from '@/types';
 
+// Register hook
 export const useRegister = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: RegisterInput) => {
-      const { confirmPassword, phoneNumber, ...rest } = data;
+      // Format phone but KEEP confirmPassword - backend needs it!
+      const { phoneNumber, ...rest } = data;
       
+      // Format phone to +234 format if starts with 0
       let formattedPhone = phoneNumber;
       if (phoneNumber.startsWith('0')) {
         formattedPhone = '+234' + phoneNumber.substring(1);
@@ -37,6 +40,7 @@ export const useRegister = () => {
       const registerData = {
         ...rest,
         phoneNumber: formattedPhone,
+        confirmPassword: data.confirmPassword, // Backend needs this!
         acceptTerms: true
       };
       
@@ -56,27 +60,29 @@ export const useRegister = () => {
       }
     },
     onError: (error: any) => {
-      console.error(' API Error - Register:', error);
-      console.error(' Error Response:', error.response?.data);
-      console.error(' Error Message:', error.message);
+      console.error('❌ API Error - Register:', error);
+      console.error('❌ Error Response:', error.response?.data);
+      console.error('❌ Error Message:', error.message);
     },
   });
 };
 
+// Login hook
 export const useLogin = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
   return useMutation({
     mutationFn: async (data: LoginInput) => {
+      // Backend expects 'identifier' and 'password' only
       const loginData = {
         identifier: data.email,
         password: data.password,
       };
       
-      console.log(' API Request - Login:', loginData);
+      console.log('🚀 API Request - Login:', loginData);
       const response = await apiClient.post<LoginResponse>('/auth/login', loginData);
-      console.log(' API Response - Login:', response.data);
+      console.log('✅ API Response - Login:', response.data);
       return response.data;
     },
     onSuccess: (data) => {
@@ -90,13 +96,14 @@ export const useLogin = () => {
       }
     },
     onError: (error: any) => {
-      console.error(' API Error - Login:', error);
-      console.error(' Error Response:', error.response?.data);
-      console.error(' Error Message:', error.message);
+      console.error('❌ API Error - Login:', error);
+      console.error('❌ Error Response:', error.response?.data);
+      console.error('❌ Error Message:', error.message);
     },
   });
 };
 
+// Verify email hook
 export const useVerifyEmail = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
@@ -114,6 +121,7 @@ export const useVerifyEmail = () => {
   });
 };
 
+// Resend OTP hook
 export const useResendOtp = () => {
   return useMutation({
     mutationFn: async (data: ResendOtpInput) => {
@@ -126,6 +134,7 @@ export const useResendOtp = () => {
   });
 };
 
+// Forgot password hook
 export const useForgotPassword = () => {
   const navigate = useNavigate();
 
@@ -141,6 +150,7 @@ export const useForgotPassword = () => {
   });
 };
 
+// Reset password hook
 export const useResetPassword = () => {
   const navigate = useNavigate();
 
@@ -156,6 +166,7 @@ export const useResetPassword = () => {
   });
 };
 
+// Logout hook
 export const useLogout = () => {
   const navigate = useNavigate();
   const { logout } = useAuthStore();
@@ -179,6 +190,7 @@ export const useLogout = () => {
   });
 };
 
+// Get profile hook
 export const useProfile = () => {
   const { isAuthenticated } = useAuthStore();
 

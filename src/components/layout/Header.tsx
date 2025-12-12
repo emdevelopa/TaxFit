@@ -11,6 +11,7 @@ export default function Header() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const navigate = useNavigate();
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const [Page, CurrentPage] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,6 +42,8 @@ export default function Header() {
     { name: 'About', path: '/about' },
     { name: 'Find Attorney', path: '/find-attorney' },
   ];
+
+  if ( CurrentPage === navLinks.path)
 
   return (
     <header 

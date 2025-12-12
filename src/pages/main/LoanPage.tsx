@@ -7,12 +7,14 @@ import Modal from '@/components/common/Modal';
 import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
 import { formatCurrency, formatDate } from '@/utils/helpers';
+import  Layout  from '@/components/layout/Layout';
+import Footer from '@/components/layout/Footer';
 
 interface Loan {
   id: string;
   amount: number;
   purpose: string;
-  term: number; // months
+  term: number;
   interestRate: number;
   status: 'pending' | 'approved' | 'rejected' | 'disbursed';
   appliedDate: string;
@@ -114,6 +116,7 @@ export default function LoansPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
+        <Layout/>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold">Loans</h1>
@@ -288,6 +291,7 @@ export default function LoansPage() {
           </div>
         </Modal>
       </div>
+      <Footer/>
     </div>
   );
 }
