@@ -16,7 +16,6 @@ interface Expense {
   category: string;
   date: string;
   description?: string;
-  receiptUrl?: string;
   status: 'pending' | 'approved' | 'rejected';
 }
 

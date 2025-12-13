@@ -24,6 +24,7 @@ export interface Address {
   postalCode?: string;
 }
 
+// Profile types
 export interface AttorneyProfile {
   firmName: string;
   yearsOfExperience: number;
@@ -55,6 +56,7 @@ export interface BusinessProfile {
   numberOfEmployees?: number;
 }
 
+// Extended User type with profile (used for attorney search results)
 export interface Attorney extends User {
   attorney: AttorneyProfile;
 }
@@ -167,35 +169,11 @@ export interface AttorneySearchResult {
 
 // Legacy type aliases for backward compatibility
 export type IUserType = UserType;
+
 export interface ITaxBenefit {
   id: string;
   title: string;
   description: string;
   amount: number;
   category: string;
-}
-
-export interface AttorneyProfile {
-  firmName: string;
-  yearsOfExperience: number;
-  hourlyRate: number;
-  specializations?: string[];
-  professionalLicenseNumber?: string;
-}
-export interface Attorney extends User {
-  attorney: AttorneyProfile;
-}
-
-
-export interface AttorneySearchFilters {
-  searchQuery?: string;
-  specialization?: string;
-  minExperience?: number;
-  maxRate?: number;
-  location?: string;
-}
-export interface AttorneySearchResult {
-  attorneys: Attorney[];
-  total: number;
-  hasMore: boolean;
 }

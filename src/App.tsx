@@ -1,7 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth-store';
-
-// Pages
 import HomePage from './pages/HomePage';
 import ServicesPage from './pages/ServicesPage';
 import AboutPage from './pages/AboutPage';
@@ -17,8 +15,8 @@ import ExpensesPage from './pages/main/ExpensesPage';
 import LoansPage from './pages/main/LoanPage';
 import ProfilePage from './pages/main/ProfilePage';
 import SettingsPage from './pages/auth/SettingsPage';
+import TaxDashboardPage from './pages/main/TaxDashboardPage';
 
-// Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   
@@ -62,6 +60,8 @@ function App() {
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/expenses" element={<ProtectedRoute><ExpensesPage /></ProtectedRoute>} />
       <Route path="/loans" element={<ProtectedRoute><LoansPage /></ProtectedRoute>} />
+      <Route path="/tax" element={<ProtectedRoute><TaxDashboardPage /></ProtectedRoute>} />
+      <Route path="/tax-calculator" element={<ProtectedRoute><TaxDashboardPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       

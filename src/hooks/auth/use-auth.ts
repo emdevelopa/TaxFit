@@ -9,7 +9,7 @@ import type {
   LoginResponse,
   ProfileUpdateInput,
   User,
-  Attorney,
+  AttorneyProfile,
   IndividualProfile,
   BusinessProfile
 } from '@/types';
@@ -51,6 +51,7 @@ export function useRegister() {
   const navigate = useNavigate();
 
   return useMutation<AuthResponse, ApiError, RegisterInput>({
+    mutationKey: ['register'],
     mutationFn: async (data) => {
       let formattedPhone = data.phoneNumber;
       if (formattedPhone.startsWith('0')) {
@@ -81,13 +82,18 @@ export function useRegister() {
     },
     onSuccess: (data) => {
       if (data.success && data.data) {
-        if (data.data.token) {
-          setAuth(data.data as {
-            user: User,
-            attorney?: Attorney,
-            individualProfile?: IndividualProfile,
-            businessProfile?: BusinessProfile,
-            token: string,
+        // ✅ Handle both 'token' and 'tokens.accessToken' structures
+        const token = data.data.token || data.data.tokens?.accessToken;
+        
+        if (token) {
+          const { user, attorney, individualProfile, businessProfile } = data.data;
+          
+          setAuth({
+            user,
+            attorney,
+            individualProfile,
+            businessProfile,
+            token,
           });
         }
         
@@ -103,33 +109,68 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation<LoginResponse, ApiError, LoginInput>({
+    mutationKey: ['login'],
     mutationFn: async (data) => {
-      const loginData = {
+      console.log('📤 Login request:', data.email);
+      
+      const response = await apiClient.post<LoginResponse>('/auth/login', {
         identifier: data.email,
         password: data.password,
-      };
-
-      const response = await apiClient.post<LoginResponse>('/auth/login', loginData);
+      });
+      
+      console.log('✅ API Response:', response.data);
+      
       return response.data;
     },
     onSuccess: (data) => {
-      if (data.success && data.data && data.data.token) {
-        setAuth(data.data as {
-            user: User,
-            attorney?: Attorney,
-            individualProfile?: IndividualProfile,
-            businessProfile?: BusinessProfile,
-            token: string,
+      console.log('🎯 onSuccess triggered');
+      
+      // ✅ Check for tokens.accessToken structure
+      if (data.success && data.data && data.data.tokens?.accessToken) {
+        console.log('✅ Valid response structure');
+        
+        const { user, tokens, individualProfile, attorney, businessProfile } = data.data;
+        const token = tokens.accessToken;
+        
+        console.log('💾 Storing auth data...');
+        console.log('Token:', token.substring(0, 20) + '...');
+        console.log('User:', user.email);
+        console.log('Email verified:', user.isEmailVerified);
+        
+        setAuth({
+          user,
+          attorney,
+          individualProfile,
+          businessProfile,
+          token,
         });
-        queryClient.invalidateQueries({ queryKey: ['profile', data.data.user.id] });
+        
+        console.log('✅ Auth stored');
+        
+        queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
 
-        if (!data.data.user.isEmailVerified) {
-          navigate(`/verify-email?email=${encodeURIComponent(data.data.user.email)}`, { replace: true });
-        } else {
-          const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
-          navigate(redirectUrl || '/dashboard', { replace: true });
-        }
+        setTimeout(() => {
+          console.log('🚀 Attempting navigation...');
+          
+          if (!user.isEmailVerified) {
+            const verifyUrl = `/verify-email?email=${encodeURIComponent(user.email)}`;
+            console.log('➡️ To:', verifyUrl);
+            navigate(verifyUrl, { replace: true });
+          } else {
+            const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
+            const destination = redirectUrl || '/dashboard';
+            console.log('➡️ To:', destination);
+            navigate(destination, { replace: true });
+          }
+        }, 100);
+      } else {
+        console.error('❌ Invalid response structure');
+        console.error('Expected: data.tokens.accessToken');
+        console.error('Got:', data);
       }
+    },
+    onError: (error) => {
+      console.error('❌ Login error:', error);
     },
   });
 }
@@ -141,10 +182,27 @@ export function useProfile() {
   return useQuery({
     queryKey: ['profile', userId],
     queryFn: async () => {
-      const response = await apiClient.get<AuthResponse>('/users/profile');
-      return response.data.data;
+      try {
+        const response = await apiClient.get<AuthResponse>('/users/profile');
+        return response.data.data;
+      } catch (error: any) {
+        // Handle 404 - endpoint not implemented yet
+        if (error.response?.status === 404) {
+          console.log('⚠️ Profile endpoint not available, using cached auth data');
+          const authState = useAuthStore.getState();
+          return {
+            user: authState.user!,
+            attorney: authState.attorney,
+            individualProfile: authState.individualProfile,
+            businessProfile: authState.businessProfile,
+          };
+        }
+        throw error;
+      }
     },
     enabled: !!userId,
+    retry: false, // Don't retry 404s
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 }
 
@@ -154,6 +212,7 @@ export function useUpdateProfile() {
   const userId = user?.id;
 
   return useMutation<AuthResponse, ApiError, ProfileUpdateInput>({
+    mutationKey: ['updateProfile'],
     mutationFn: async (data) => {
       const response = await apiClient.put<AuthResponse>('/users/profile', data);
       return response.data;
@@ -162,14 +221,21 @@ export function useUpdateProfile() {
       if (data.success && data.data) {
         updateUser(data.data.user);
         
-        const profileData = data.data.attorney || data.data.individualProfile || data.data.businessProfile;
+        const { attorney, individualProfile, businessProfile } = data.data;
+        const profileData = attorney || individualProfile || businessProfile;
+        
         if (profileData) {
-          updateProfile(profileData as Attorney | IndividualProfile | BusinessProfile);
+          updateProfile(profileData);
         }
 
         if (userId) {
           queryClient.invalidateQueries({ queryKey: ['profile', userId] });
         }
+      }
+    },
+    onError: (error: any) => {
+      if (error.response?.status === 404) {
+        console.error('⚠️ Profile update endpoint not available');
       }
     },
   });
@@ -179,6 +245,7 @@ export function useUploadAvatar() {
   const { updateUser } = useAuthStore();
 
   return useMutation<AvatarResponse, ApiError, File>({
+    mutationKey: ['uploadAvatar'],
     mutationFn: async (file) => {
       const formData = new FormData();
       formData.append('avatar', file);
@@ -200,22 +267,28 @@ export function useUploadAvatar() {
         updateUser({ avatarUrl: data.data.url });
       }
     },
+    onError: (error: any) => {
+      if (error.response?.status === 404) {
+        console.error('⚠️ Avatar upload endpoint not available');
+      }
+    },
   });
 }
 
 export function useVerifyEmail() {
   const navigate = useNavigate();
-  const { updateEmailVerifiedStatus } = useAuthStore();
+  const { updateUser } = useAuthStore();
   const queryClient = useQueryClient();
 
   return useMutation<AuthResponse, ApiError, VerifyEmailInput>({
+    mutationKey: ['verifyEmail'],
     mutationFn: async (data) => {
       const response = await apiClient.post<AuthResponse>('/auth/verify-email', data);
       return response.data;
     },
     onSuccess: (data) => {
       if (data.success && data.data) {
-        updateEmailVerifiedStatus(true);
+        updateUser({ isEmailVerified: true });
         queryClient.invalidateQueries({ queryKey: ['profile', data.data.user?.id] });
         navigate('/dashboard', { replace: true });
       }
@@ -225,6 +298,7 @@ export function useVerifyEmail() {
 
 export function useResendVerification() {
   return useMutation<SuccessResponse, ApiError, string>({
+    mutationKey: ['resendVerification'],
     mutationFn: async (email) => {
       const response = await apiClient.post<SuccessResponse>('/auth/resend-verification', { email });
       return response.data;
@@ -246,6 +320,7 @@ export function useLogout() {
 
 export function useChangePassword() {
   return useMutation<SuccessResponse, ApiError, ChangePasswordInput>({
+    mutationKey: ['changePassword'],
     mutationFn: async (data) => {
       const response = await apiClient.post<SuccessResponse>('/auth/change-password', data);
       return response.data;
@@ -261,6 +336,7 @@ export function useUpdateSecuritySettings() {
   };
   
   return useMutation<SuccessResponse, ApiError, SecuritySettingsInput>({
+    mutationKey: ['updateSecuritySettings'],
     mutationFn: async (data) => {
       const response = await apiClient.put<SuccessResponse>('/users/security-settings', data);
       return response.data;
@@ -273,6 +349,7 @@ export function useDeleteAccount() {
   const navigate = useNavigate();
 
   return useMutation<SuccessResponse, ApiError, string>({
+    mutationKey: ['deleteAccount'],
     mutationFn: async (password) => {
       const response = await apiClient.delete<SuccessResponse>('/users/account', {
         data: { password },
@@ -299,6 +376,7 @@ export function useUpdateNotificationSettings() {
   };
   
   return useMutation<SuccessResponse, ApiError, NotificationSettingsInput>({
+    mutationKey: ['updateNotificationSettings'],
     mutationFn: async (data) => {
       const response = await apiClient.put<SuccessResponse>('/users/notification-settings', data);
       return response.data;
@@ -315,6 +393,7 @@ export function useUpdatePreferences() {
   };
 
   return useMutation<SuccessResponse, ApiError, PreferencesInput>({
+    mutationKey: ['updatePreferences'],
     mutationFn: async (data) => {
       const response = await apiClient.put<SuccessResponse>('/users/preferences', data);
       return response.data;
@@ -324,6 +403,7 @@ export function useUpdatePreferences() {
 
 export function useForgotPassword() {
   return useMutation<SuccessResponse, ApiError, string>({
+    mutationKey: ['forgotPassword'],
     mutationFn: async (email) => {
       const response = await apiClient.post<SuccessResponse>('/auth/forgot-password', { email });
       return response.data;
@@ -335,6 +415,7 @@ export function useResetPassword() {
   const navigate = useNavigate();
 
   return useMutation<SuccessResponse, ApiError, ResetPasswordInput>({
+    mutationKey: ['resetPassword'],
     mutationFn: async (data) => {
       const response = await apiClient.post<SuccessResponse>('/auth/reset-password', data);
       return response.data;
@@ -347,6 +428,7 @@ export function useResetPassword() {
 
 export function useResendOtp() {
   return useMutation<SuccessResponse, ApiError, ResendOtpInput>({
+    mutationKey: ['resendOtp'],
     mutationFn: async (data) => {
       const response = await apiClient.post<SuccessResponse>('/auth/resend-otp', data);
       return response.data;

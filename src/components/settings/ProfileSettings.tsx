@@ -1,199 +1,208 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, FileText, Upload, Camera } from 'lucide-react';
-import Card from '@/components/common/Card';
-import Input from '@/components/common/Input';
-import Button from '@/components/common/Button';
+import { Camera, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { useUpdateProfile, useUploadAvatar } from '@/hooks/auth/use-auth';
+import Button from '@/components/common/Button';
+import Input from '@/components/common/Input';
+import Avatar from '@/components/common/Avatar';
+import Select from '@/components/common/Select';
 
 export default function ProfileSettings() {
-  const { user, individualProfile } = useAuthStore();
-  const updateProfile = useUpdateProfile();
-  const uploadAvatar = useUploadAvatar();
+  const { user } = useAuthStore();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+  const { mutate: uploadAvatar, isPending: isUploading } = useUploadAvatar();
 
-  const [profileData, setProfileData] = useState({
+  const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
-    email: user?.email || '',
     phoneNumber: user?.phoneNumber || '',
-    address: individualProfile?.address || '',
-    dateOfBirth: individualProfile?.dateOfBirth || '',
-    taxId: individualProfile?.taxId || '',
+    email: user?.email || '',
   });
 
-  const [profileImage, setProfileImage] = useState<string | null>(user?.avatarUrl || null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      try {
-        await uploadAvatar.mutateAsync(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfileImage(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Upload failed:', error);
-      }
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Image size must be less than 5MB');
+      return;
     }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please upload an image file');
+      return;
+    }
+
+    setUploadError(null);
+
+    uploadAvatar(file, {
+      onSuccess: () => {
+        console.log('✅ Avatar uploaded successfully');
+        setUploadError(null);
+      },
+      onError: (error: any) => {
+        console.error('❌ Upload failed:', error);
+        
+        if (error.response?.status === 404) {
+          setUploadError('Avatar upload is not available yet. This feature is coming soon!');
+        } else {
+          setUploadError(error.response?.data?.message || 'Failed to upload image. Please try again.');
+        }
+      },
+    });
   };
 
-  const handleSave = async () => {
-    try {
-      await updateProfile.mutateAsync({
-        fullName: profileData.fullName,
-        phoneNumber: profileData.phoneNumber,
-        address: profileData.address,
-        dateOfBirth: profileData.dateOfBirth,
-        taxId: profileData.taxId,
-      });
-      alert('Profile updated successfully!');
-    } catch (error) {
-      console.error('Update failed:', error);
-    }
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdateError(null);
 
-  const initials = profileData.fullName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+    updateProfile(formData, {
+      onSuccess: () => {
+        console.log(' Profile updated successfully');
+        setUpdateError(null);
+      },
+      onError: (error: any) => {
+        console.error(' Update failed:', error);
+        
+        if (error.response?.status === 404) {
+          setUpdateError('Profile update is not available yet. This feature is coming soon!');
+        } else {
+          setUpdateError(error.response?.data?.message || 'Failed to update profile. Please try again.');
+        }
+      },
+    });
+  };
 
   return (
-    <Card>
-      <div className="border-b border-gray-200 pb-4 mb-6">
-        <h2 className="text-2xl font-light text-gray-900 flex items-center gap-2">
-          <User className="w-6 h-6 text-primary-600" />
-          Personal Information
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Update your personal details and contact information
-        </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile Settings</h2>
+        <p className="text-gray-600">Update your personal information and profile picture</p>
       </div>
 
-      <div className="space-y-6">
-        {/* Profile Picture */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Profile Picture
-          </label>
-          <div className="flex items-center gap-6">
+      {/* Avatar Upload */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h3>
+        
+        <div className="flex items-center gap-6">
+          <Avatar
+            src={user?.avatarUrl}
+            name={user?.fullName || 'User'}
+            size="xl"
+          />
+          
+          <div className="flex-1">
             <div className="relative">
-              {profileImage ? (
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-200">
-                  <img
-                    src={profileImage}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white text-3xl font-light">
-                  {initials}
-                </div>
-              )}
-              <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors border-2 border-gray-200 cursor-pointer">
-                <Camera className="w-4 h-4 text-gray-600" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="avatar-upload"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="avatar-upload"
+                className={`inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                  isUploading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    <span>Change Picture</span>
+                  </>
+                )}
               </label>
             </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 mb-3">
-                Upload a new profile picture. JPG, PNG or GIF. Max size 5MB.
-              </p>
-              <div className="flex gap-3">
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Upload className="w-4 h-4" />}
-                  disabled={uploadAvatar.isPending}
-                  type="button"
-                  onClick={() => document.getElementById('avatar-upload')?.click()}
-                >
-                  {uploadAvatar.isPending ? 'Uploading...' : 'Upload Photo'}
-                </Button>
-                {profileImage && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setProfileImage(null)}
-                  >
-                    Remove
-                  </Button>
-                )}
+            <p className="text-sm text-gray-500 mt-2">
+              JPG, PNG or GIF. Max size 5MB.
+            </p>
+            
+            {/* Upload Error */}
+            {uploadError && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-800">{uploadError}</p>
               </div>
-            </div>
+            )}
           </div>
-        </div>
-
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Full Name"
-            value={profileData.fullName}
-            onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-            leftIcon={<User className="w-4 h-4" />}
-          />
-          <div>
-            <Input
-              label="Email Address"
-              type="email"
-              value={profileData.email}
-              disabled
-              leftIcon={<Mail className="w-4 h-4" />}
-            />
-            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
-          </div>
-          <Input
-            label="Phone Number"
-            value={profileData.phoneNumber}
-            onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
-            leftIcon={<Phone className="w-4 h-4" />}
-          />
-          <Input
-            label="Date of Birth"
-            type="date"
-            value={profileData.dateOfBirth}
-            onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
-            leftIcon={<Calendar className="w-4 h-4" />}
-          />
-          <Input
-            label="Tax ID (TIN)"
-            value={profileData.taxId}
-            onChange={(e) => setProfileData({ ...profileData, taxId: e.target.value })}
-            leftIcon={<FileText className="w-4 h-4" />}
-          />
-          <Input
-            label="Address"
-            value={profileData.address}
-            onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-            leftIcon={<MapPin className="w-4 h-4" />}
-          />
-        </div>
-
-        {/* Save Button */}
-        <div className="flex justify-end pt-4 border-t">
-          <Button
-            onClick={handleSave}
-            disabled={updateProfile.isPending}
-          >
-            {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
         </div>
       </div>
-    </Card>
+
+      {/* Profile Form */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+        
+        <div className="space-y-4">
+          <Input
+            label="Full Name"
+            value={formData.fullName}
+            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+            placeholder="Enter your full name"
+          />
+
+          <Input
+            label="Email Address"
+            type="email"
+            value={formData.email}
+            disabled
+            className="bg-gray-50 cursor-not-allowed"
+            helper="Email cannot be changed"
+          />
+
+          <Input
+            label="Phone Number"
+            type="tel"
+            value={formData.phoneNumber}
+            onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+            placeholder="+234 800 000 0000"
+          />
+
+          {/* Update Error */}
+          {updateError && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-yellow-800">{updateError}</p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <Button
+              type="submit"
+              disabled={isUpdating}
+              leftIcon={isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            >
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </div>
+      </form>
+
+      {/* Feature Availability Notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="text-sm font-medium text-blue-900 mb-1">
+              Feature Availability
+            </h4>
+            <p className="text-sm text-blue-800">
+              Profile updates and avatar uploads are currently in development. 
+              You can view your profile information, but changes may not be saved until the backend is fully configured.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
