@@ -3,7 +3,6 @@ import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth-store';
 import { useProfile } from '@/hooks/auth/use-auth';
-// Removed useQuery and apiClient imports as they are no longer needed here.
 
 import { 
   TrendingUp, DollarSign, FileText, Loader2, Calculator, Users,
@@ -24,6 +23,21 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
         taxSaved: 120000,
         activeLoans: 0
     };
+    
+    // --- Helper Component for Quick Action Links ---
+    const QuickActionButton: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
+        <Link 
+            to={to} 
+            className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
+        >
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-full text-primary-600 shadow-sm">{icon}</div>
+                <span className="font-medium text-gray-800">{label}</span>
+            </div>
+            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-transform" />
+        </Link>
+    );
+    // ------------------------------------------------------------------
 
     return (
         <Layout>
@@ -40,16 +54,16 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-900">
                                     Welcome back, {firstName}!
-                                
                                 </h1>
                                 <p className="text-gray-600">Here's your tax overview</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Stats Grid */}
+                    {/* Stats Grid (Omitted for brevity) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <Card hover>
+                        {/* ... (Your existing Stat Cards here) ... */}
+                         <Card hover>
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="text-gray-600 text-sm mb-2">Total Expenses</div>
@@ -101,15 +115,33 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                         </Card>
                     </div>
 
-                    {/* Quick Actions */}
+                    {/* Quick Actions & Recent Activity */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <Card>
                             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
                             <div className="space-y-3">
-                                <Link to="/expenses" /* ... */ >{/* ... */}</Link>
-                                <Link to="/tax" /* ... */ >{/* ... */}</Link>
-                                <Link to="/find-attorney" /* ... */ >{/* ... */}</Link>
-                                <Link to="/loans" /* ... */ >{/* ... */}</Link>
+                                {/* START: IMPLEMENTED QUICK ACTIONS */}
+                                <QuickActionButton 
+                                    to="/expenses"
+                                    icon={<DollarSign className="w-4 h-4" />}
+                                    label="Add New Expense"
+                                />
+                                <QuickActionButton 
+                                    to="/tax"
+                                    icon={<Calculator className="w-4 h-4" />}
+                                    label="Use Tax Calculator"
+                                />
+                                <QuickActionButton 
+                                    to="/find-attorney"
+                                    icon={<Users className="w-4 h-4" />}
+                                    label="Find Tax Attorney"
+                                />
+                                <QuickActionButton 
+                                    to="/loans"
+                                    icon={<CreditCard className="w-4 h-4" />}
+                                    label="Apply for Tax Loan"
+                                />
+                                {/* END: IMPLEMENTED QUICK ACTIONS */}
                             </div>
                         </Card>
 
@@ -127,9 +159,9 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                         </Card>
                     </div>
 
-                    {/* Tax Information Banner */}
+                    {/* Tax Information Banner (Omitted for brevity) */}
                     <Card className="bg-gradient-to-r from-primary-50 to-blue-50 border-primary-200">
-                        <div className="flex items-start justify-between">
+                         <div className="flex items-start justify-between">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Calculator className="w-5 h-5 text-primary-600" />
@@ -161,7 +193,7 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
 // --- END: General User Dashboard Content ---
 
 
-// --- MAIN DASHBOARD MANAGER ---
+// --- MAIN DASHBOARD MANAGER (No Change) ---
 
 export default function DashboardPage() {
     const { user } = useAuthStore();

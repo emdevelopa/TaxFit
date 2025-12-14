@@ -1,24 +1,16 @@
-// src/pages/main/FindAttorneyPage.tsx
-
 import React from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Filter, Loader2, MapPin, Star, Briefcase, TrendingUp, ArrowRight, Award } from 'lucide-react';
-import { toast } from 'react-hot-toast'; // Required for error display
-
+import { toast } from 'react-hot-toast'; 
 import SearchBar from '@/components/common/SearchBar';
 import Button from '@/components/common/Button';
 import Layout from '@/components/layout/Layout';
-import Avatar from '@/components/common/Avatar'; // Assuming this component exists
+import Avatar from '@/components/common/Avatar';
 import { useAuthStore } from '@/store/auth-store';
-import { formatCurrency } from '@/utils/helpers'; // Assuming this helper exists
-import { handleApiError } from '@/lib/api-client'; // Import helper for readable errors
-
-// Import the hook and types
+import { formatCurrency } from '@/utils/helpers';
+import { handleApiError } from '@/lib/api-client';
 import { useAttorneySearch } from '@/hooks/attorney/use-attorney-search'; 
 import type { Attorney, AttorneySearchFilters } from '@/types'; 
-
-
-// --- AttorneyCard Component (Corrected for nested types) ---
 
 interface AttorneyCardProps {
   attorney: Attorney; // Use the combined type
@@ -60,7 +52,7 @@ function AttorneyCard({ attorney }: AttorneyCardProps) {
         <div className="flex items-start gap-6 mb-8 pb-8 border-b border-gray-100">
           <div className="flex-shrink-0">
             <Avatar 
-                src={attorney.avatarUrl} 
+                src={attorney.avatarUrl ?? undefined} 
                 name={attorney.fullName} 
                 size="lg"
                 className="w-20 h-20"

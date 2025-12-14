@@ -1,11 +1,8 @@
-// src/hooks/attorney/use-attorney-search.ts
+// src/hooks/attorney/use-attorney-search.ts (FIXED)
 
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
-// Ensure the handleApiError is imported from where you defined it in apiClient.ts
 import { handleApiError } from '@/lib/api-client'; 
-
-// Assuming these types are correctly structured and available:
 import type { 
     AttorneySearchResult, 
     AttorneySearchFilters 
@@ -17,30 +14,37 @@ interface AttorneySearchResponse {
     data: AttorneySearchResult;
 }
 
-/**
- * Hook to fetch paginated and filtered lists of available attorneys.
- * Calls GET /book/available.
- * @param filters - The current search and filter criteria, including searchQuery, specialization, etc.
- */
+const cleanFilters = (filters: AttorneySearchFilters) => {
+    const page = Number(filters.page || 1);
+    const limit = Number(filters.limit || 20);
+    const cleaned: Record<string, any> = { page, limit };
+
+    // Iterate over the rest of the filters
+    Object.entries(filters).forEach(([key, value]) => {
+        if (key !== 'page' && key !== 'limit' && value !== undefined && value !== null && value !== '') {
+            cleaned[key] = value;
+        }
+    });
+
+    return cleaned;
+};
+
+
 export function useAttorneySearch(filters: AttorneySearchFilters) {
     
-    // Default page/limit values, assumed for a search page.
-    const defaultFilters = { page: 1, limit: 20, ...filters };
+    const cleanedFilters = cleanFilters(filters);
 
-    // Use useQuery for data fetching (read operation)
     return useQuery<AttorneySearchResult, unknown>({
-        // The query key changes when any filter parameter changes, ensuring automatic refetching.
-        queryKey: ['attorneySearch', defaultFilters],
+        queryKey: ['attorneySearch', cleanedFilters],
         
         queryFn: async () => {
             const response = await apiClient.get<AttorneySearchResponse>('/book/available', {
-                params: defaultFilters,
+                params: cleanedFilters,
             });
             
-            // Return the nested data payload
             return response.data.data; 
         },
         
-        staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
+        staleTime: 5 * 60 * 1000, 
     });
 }

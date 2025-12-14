@@ -66,7 +66,7 @@ export default function AttorneyCard({ attorney }: AttorneyCardProps) {
           {/* Avatar (Using assumed Avatar component) */}
           <div className="flex-shrink-0">
             <Avatar 
-                src={attorney.avatarUrl} 
+                src={attorney.avatarUrl ?? undefined} 
                 name={attorney.fullName} 
                 size="lg" // Assuming 'lg' corresponds to w-20 h-20
                 className="w-20 h-20"

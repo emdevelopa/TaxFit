@@ -78,7 +78,7 @@ export function useRegister() {
         ...(data.userType === 'attorney' && {
           firmName: data.firmName,
           yearsOfExperience: data.yearsOfExperience,
-          hourlyRate: data.hourlyRate,
+          professionalLicenseNumber: data.professionalLicenseNumber,
         }),
         ...(data.userType === 'individual' && {
           employmentStatus: data.employmentStatus,
@@ -215,7 +215,7 @@ export function useUpdateProfile() {
   return useMutation<AuthResponse, ApiError, ProfileUpdateInput>({
     mutationKey: ['updateProfile'],
     mutationFn: async (data) => {
-      const response = await apiClient.put<AuthResponse>('/users/profile', data);
+      const response = await apiClient.put<AuthResponse>('/auth/profile', data);
       return response.data;
     },
     onSuccess: (data) => {

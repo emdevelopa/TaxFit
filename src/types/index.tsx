@@ -1,5 +1,5 @@
 
-export type UserType = 'individual' | 'attorney' | 'business';
+export type UserType = 'individual' | 'attorney' | 'business'| 'admin';
 export type EmploymentStatus = 'employed' | 'self-employed' | 'unemployed' | 'student' | 'retired';
 
 export interface User {
@@ -54,6 +54,8 @@ export interface AttorneyProfile {
         issuer: string;
         year: number;
     }[];
+    totalReviews?: number; 
+    averageRating?: number;
 }
 
 export interface IndividualProfile {
@@ -182,14 +184,18 @@ export interface AttorneySearchFilters {
   maxRate?: number;
   location?: string;
   rating?: number;
+  page: number;
+  limit: number;
 }
 
 export interface AttorneySearchResult {
-  // Uses the corrected 'Attorney' type
   attorneys: Attorney[]; 
   total: number;
   hasMore: boolean;
+  limit: number;
 }
+
+
 
 // --- Legacy/Misc Types ---
 
