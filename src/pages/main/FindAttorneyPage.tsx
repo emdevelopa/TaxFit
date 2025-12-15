@@ -189,7 +189,7 @@ function AttorneyCard({ attorney }: AttorneyCardProps) {
             className="px-6 py-3 bg-secondary-900 hover:bg-secondary-800 text-white rounded-lg"
           >
             <span className="flex items-center gap-2">
-              {isAuthenticated ? 'Hire Attorney' : 'Sign in to Hire'}
+              {isAuthenticated ? 'Book Attorney' : 'Sign in to Hire'}
               <ArrowRight className="w-4 h-4" />
             </span>
           </button>
