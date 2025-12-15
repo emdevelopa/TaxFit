@@ -14,9 +14,6 @@ import {
 
 export default {}
 
-/**
- * Hook to calculate VAT
- */
 export function useCalculateVAT() {
   return useMutation({
     mutationFn: (input: TaxCalculationInput) => {

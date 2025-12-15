@@ -1,7 +1,7 @@
 
 export type UserType = 'individual' | 'attorney' | 'business'| 'admin';
 export type EmploymentStatus = 'employed' | 'self-employed' | 'unemployed' | 'student' | 'retired';
-
+export type ConsultationMode = 'In-Person' | 'Video Call' | 'Phone Call' | 'chat';
 export interface User {
   id: string;
   fullName: string;
@@ -86,6 +86,7 @@ export interface AuthResponseData {
   token?: string; // Token might be top-level or nested depending on the endpoint
   tokens?: AuthTokens;
   requiresEmailVerification?: boolean;
+  bookingNumber: string;
 }
 
 export interface AuthTokens {
@@ -232,3 +233,77 @@ export interface ITaxBenefit {
   amount: number;
   category: string;
 }
+
+export interface ApiErrorResponse {
+    success: false;
+    message: string;
+    errors?: string[] | { [key: string]: string }; // Optional field for validation errors
+}
+
+
+export interface ApiError extends Error {
+    response?: {
+        data: ApiErrorResponse;
+        status: number;
+        statusText: string;
+    };
+    // Include other Axios error properties like code, config, etc., if needed
+    isAxiosError: boolean;
+    name: string;
+    message: string;
+}
+
+// src/types/index.ts (Conceptual content for your main type file)
+
+// --- Standard Response Structures ---
+
+/**
+ * Interface for standard API errors.
+ */
+export interface ApiError {
+    message: string;
+    status: number;
+    details?: string | Record<string, any>;
+}
+
+/**
+ * Generic Interface for standard pagination metadata.
+ */
+export interface PaginatedResponse {
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    totalItems: number;
+}
+
+/**
+ * The standard, generic API response wrapper for non-authentication endpoints.
+ * T is the type of the data payload contained within the 'data' field.
+ * * This should replace the incorrect extension of 'AuthResponse' in your hooks.
+ */
+export interface ApiResponse<T> {
+    message: string;
+    status: number;
+    data: T;
+}
+
+
+
+// --- Specific Data Payloads ---
+
+// You would need to define all the specific data types here, for example:
+// export type ConsultationMode = 'In-Person' | 'Video Call' | 'Phone Call';
+// export interface User { /* ... fields ... */ }
+// export interface Booking { /* ... fields ... */ }
+// export interface Expense { /* ... fields ... */ }
+
+// --- Example of how the Auth Response should be structured (to avoid inheritance issues) ---
+
+// export interface AuthResponseData { 
+//     user: User; 
+//     token: string;
+//     bookingNumber?: string; // Should be optional if sometimes included
+// }
+// export interface AuthResponse extends ApiResponse<AuthResponseData> {} 
+
+// --- END OF TYPES FILE ---

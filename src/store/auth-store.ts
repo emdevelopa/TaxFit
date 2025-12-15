@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+// Import only the types needed for the store state
 import type { User, AttorneyProfile, IndividualProfile, BusinessProfile } from '@/types/index';
+// 1. FIX: REMOVE the conflicting import: 'import { User } from "lucide-react";'
 
+// Define the keys globally for consistency
+const ACCESS_TOKEN_KEY = 'accessToken'; 
+const REFRESH_TOKEN_KEY = 'refreshToken';
+
+// 2. AuthState Interface remains correct (using nullable types)
 interface AuthState {
   user: User | null;
   attorney: AttorneyProfile | null;
@@ -13,9 +20,9 @@ interface AuthState {
   // Actions
   setAuth: (data: {
     user: User;
-    attorney?: AttorneyProfile;
-    individualProfile?: IndividualProfile;
-    businessProfile?: BusinessProfile;
+    attorney?: AttorneyProfile | null;
+    individualProfile?: IndividualProfile | null;
+    businessProfile?: BusinessProfile | null;
     token: string;
   }) => void;
   updateUser: (user: Partial<User>) => void;
@@ -26,7 +33,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
+      // 3. FIX: Initialize state properties correctly to null
+      user: null, 
       attorney: null,
       individualProfile: null,
       businessProfile: null,
@@ -34,16 +42,16 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (data) => {
-        // Store token in localStorage for API client
+        // 4. FIX: Use the correct key for storing the token
         if (data.token) {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem(ACCESS_TOKEN_KEY, data.token);
         }
         
         set({
           user: data.user,
-          attorney: data.attorney || null,
-          individualProfile: data.individualProfile || null,
-          businessProfile: data.businessProfile || null,
+          attorney: data.attorney ?? null,
+          individualProfile: data.individualProfile ?? null,
+          businessProfile: data.businessProfile ?? null,
           token: data.token,
           isAuthenticated: true,
         });
@@ -56,14 +64,10 @@ export const useAuthStore = create<AuthState>()(
 
       updateProfile: (profileData) =>
         set((state) => {
-          // --- FIX: Robust Profile Update ---
-          // Ensure the profile object exists (initialize with {} if null) 
-          // before merging partial updates. This prevents crashes if the profile 
-          // data wasn't returned in the initial login/register response.
           
           if (state.user?.userType === 'attorney') {
+            // Check if currentProfile is null/undefined before merging
             const currentProfile = state.attorney || {};
-            // Use type assertion to satisfy the store state definition
             return { attorney: { ...currentProfile, ...profileData } as AttorneyProfile };
           
           } else if (state.user?.userType === 'individual') {
@@ -79,7 +83,10 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       logout: () => {
-        localStorage.removeItem('token');
+        // 5. FIX: Clear both tokens using the correct keys
+        localStorage.removeItem(ACCESS_TOKEN_KEY); 
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        
         set({
           user: null,
           attorney: null,

@@ -6,6 +6,8 @@ import Layout from '@/components/layout/Layout';
 import ProfileCard from '@/components/profile/ProfileCard';
 import AccountInfoCard from '@/components/profile/AccountInfoCard';
 import ProfileForm from '@/components/profile/ProfileForm';
+// Assuming '@/types/index' contains ProfileUpdateInput and EmploymentStatus
+import type { ProfileUpdateInput, EmploymentStatus } from '@/types/index';
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
@@ -14,6 +16,8 @@ export default function ProfilePage() {
   const { mutate: uploadAvatar, isPending: isUploading } = useUploadAvatar();
 
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Initial state uses data from global store (user)
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     phoneNumber: user?.phoneNumber || '',
@@ -23,31 +27,36 @@ export default function ProfilePage() {
     address: '',
   });
 
-  // Update form when profile loads
+  // ** 1. Data Hydration (useEffect) **
+  // Syncs local form state with fetched profile data
   useEffect(() => {
     if (profile?.user) {
+      // Use nullish coalescing (??) for defensive data retrieval
+      const individual = profile.individualProfile;
+
       setFormData({
         fullName: profile.user.fullName || '',
         phoneNumber: profile.user.phoneNumber || '',
-        employmentStatus: profile.individualProfile?.employmentStatus || '',
-        occupation: profile.individualProfile?.occupation || '',
-        dateOfBirth: profile.individualProfile?.dateOfBirth || '',
-        address: profile.individualProfile?.address || '',
+        // Use ?? '' for safety, matching initial state type
+        employmentStatus: individual?.employmentStatus ?? '', 
+        occupation: individual?.occupation ?? '',
+        dateOfBirth: individual?.dateOfBirth ?? '',
+        address: individual?.address ?? '',
       });
     }
   }, [profile]);
 
+
+  // ** 2. Image Upload Handler **
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image size must be less than 5MB');
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file');
       return;
@@ -64,10 +73,19 @@ export default function ProfilePage() {
     });
   };
 
+  // ** 3. Form Submission Handler (FIXED LOGIC AND TYPING) **
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    updateProfile(formData, {
+    const updatePayload: ProfileUpdateInput = {
+        fullName: formData.fullName || undefined,
+        phoneNumber: formData.phoneNumber || undefined,
+        employmentStatus: (formData.employmentStatus || undefined) as EmploymentStatus | undefined,
+        occupation: formData.occupation || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        address: formData.address || undefined,
+    };
+
+    updateProfile(updatePayload, {
       onSuccess: () => {
         console.log('✅ Profile updated successfully');
         setIsEditing(false);
@@ -78,25 +96,30 @@ export default function ProfilePage() {
       },
     });
   };
-
+  
+  // ** 4. Input Change Handler **
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // ** 5. Cancel Handler **
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form to original values
+    // Reset form to original values from profile data
     if (profile?.user) {
+      const individual = profile.individualProfile;
       setFormData({
         fullName: profile.user.fullName || '',
         phoneNumber: profile.user.phoneNumber || '',
-        employmentStatus: profile.individualProfile?.employmentStatus || '',
-        occupation: profile.individualProfile?.occupation || '',
-        dateOfBirth: profile.individualProfile?.dateOfBirth || '',
-        address: profile.individualProfile?.address || '',
+        employmentStatus: individual?.employmentStatus ?? '',
+        occupation: individual?.occupation ?? '',
+        dateOfBirth: individual?.dateOfBirth ?? '',
+        address: individual?.address ?? '',
       });
     }
   };
+
+  // --- Render Logic ---
 
   if (isLoadingProfile) {
     return (

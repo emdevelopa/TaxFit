@@ -8,7 +8,7 @@ import type { User, IndividualProfile } from '@/types';
 
 interface ProfileFormProps {
   user: User | null;
-  individualProfile?: IndividualProfile;
+  individualProfile?: IndividualProfile | null;
   isEditing: boolean;
   isUpdating: boolean;
   onEdit: () => void;

@@ -3,6 +3,7 @@ import { Bell, Check, AlertCircle } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useUpdateNotificationSettings } from '@/hooks/auth/use-auth';
+import Input from '@/components/common/Input';
 
 export default function NotificationSettings() {
   const updateNotifications = useUpdateNotificationSettings();

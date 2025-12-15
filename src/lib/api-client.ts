@@ -5,6 +5,35 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
+// State to track the refresh token request status
+let isRefreshing = false;
+// Queue stores promises (with their resolve/reject) for failed requests to retry later
+let failedQueue: Array<{ 
+    config: InternalAxiosRequestConfig; 
+    resolve: (value: AxiosResponse<any>) => void; 
+    reject: (reason?: any) => void 
+}> = [];
+
+// FIX 1: Simplified and corrected processQueue function
+const processQueue = (error: AxiosError | null, accessToken: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else if (accessToken && prom.config.headers) {
+            // Success: update the header and retry the request
+            prom.config.headers.Authorization = `Bearer ${accessToken}`;
+            apiClient(prom.config).then(prom.resolve).catch(prom.reject);
+        } else {
+             // Handle case where accessToken is null after refresh attempt
+            prom.reject(new Error("Failed to retrieve new access token."));
+        }
+    });
+
+    failedQueue = [];
+    isRefreshing = false;
+};
+
+
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -14,6 +43,7 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 apiClient.interceptors.request.use(
+// ... (request interceptor remains unchanged)
   (config: InternalAxiosRequestConfig) => {
     const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
     if (accessToken && config.headers) {
@@ -34,47 +64,67 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;
 
-    const logoutAndRedirect = async (reason: string) => {
+    const logoutAndRedirect = async (reason: string, isRefreshFailure = false) => {
         console.error(`Authentication failed: ${reason}. Logging out.`);
         
         const { useAuthStore } = await import('@/store/auth-store');
-        const logout = useAuthStore.getState().logout;
+        useAuthStore.getState().logout();
+        toast.error('Session expired or authentication failed. Please log in again.');
         
-        logout(); 
-        window.location.replace('/login');
+        if (isRefreshFailure) {
+            window.location.replace('/login');
+        }
+        // We reject with the original error so the calling component can handle it
+        return Promise.reject(error); 
     };
 
 
     // --- Token Refresh Logic (Retry on 401) ---
-    if (status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    if (status === 401 && originalRequest.url !== `${API_BASE_URL}/auth/refresh-token` && !originalRequest._retry) {
+      
+      if (isRefreshing) {
+        // FIX 2: Queue the request using a new Promise to wait for the refresh
+        return new Promise((resolve, reject) => {
+            failedQueue.push({ config: originalRequest, resolve, reject });
+        });
+      }
 
-      try {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-        if (!refreshToken) {
-            return logoutAndRedirect("No refresh token available");
-        }
+      originalRequest._retry = true;
+      isRefreshing = true;
+      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+      
+      if (!refreshToken) {
+        processQueue(error, null); // Reject all queued requests
+        return logoutAndRedirect("No refresh token available", true);
+      }
         
-        // Request token refresh (using base axios instance to avoid infinite interceptor loop)
+      try {
+        // Request token refresh
         const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
           refreshToken,
         });
 
         const { accessToken, refreshToken: newRefreshToken } = response.data.data.tokens;
 
-        // Update tokens in localStorage
+        // Update tokens
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
         localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
         
-        // Update headers and retry original request
+        // Update headers for the original request
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         }
-        return apiClient(originalRequest);
+
+        // Process all queued requests (null error means success)
+        processQueue(null, accessToken); 
+        
+        // FIX 3: Return the result of the retried original request (Promise<AxiosResponse>)
+        return apiClient(originalRequest); 
 
       } catch (refreshError) {
-        // Refresh token failed (e.g., refresh token expired or invalid)
-        return logoutAndRedirect("Token refresh failed");
+        // Refresh token failed
+        processQueue(error, null); // Reject all queued requests with the original error
+        return logoutAndRedirect("Token refresh failed", true); 
       }
     }
     
@@ -85,21 +135,18 @@ apiClient.interceptors.response.use(
     const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
 
     if (errors && Array.isArray(errors)) {
-      // If backend returns an array of validation errors
       errors.forEach((err: string) => toast.error(err));
-    } else if (errorMessage) {
-      // Show generic or single backend error message
+    } else if (errorMessage && status !== 401) { 
       toast.error(errorMessage);
     }
     
-    // Re-throw error for specific component/hook error handling
     return Promise.reject(error);
   }
 );
 
 export default apiClient;
 
-// --- Helper Functions (Updated) ---
+// --- Helper Functions (RESTORED NAMED EXPORTS) ---
 
 /**
  * Helper function to extract user-friendly error message from unknown API error objects.
