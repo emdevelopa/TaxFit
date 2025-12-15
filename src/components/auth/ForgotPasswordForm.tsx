@@ -20,7 +20,7 @@ export default function ForgotPasswordForm() {
   const forgotPasswordMutation = useForgotPassword();
 
   const onSubmit = (data: ForgotPasswordInput) => {
-    forgotPasswordMutation.mutate(data);
+    forgotPasswordMutation.mutate(data.email);
   };
 
   return (

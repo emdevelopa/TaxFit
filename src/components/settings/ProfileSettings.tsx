@@ -5,52 +5,71 @@ import { useUpdateProfile, useUploadAvatar } from '@/hooks/auth/use-auth';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import Avatar from '@/components/common/Avatar';
-import Textarea from '@/components/common/Textarea'; // Assuming you have a Textarea component
-import { formatCurrency } from '@/utils/helpers'; // Assuming this is available
+import Textarea from '@/components/common/Textarea'; 
+import { formatCurrency } from '@/utils/helpers'; 
+import type { User, AttorneyProfile } from '@/types/index'; // Import base User and AttorneyProfile types
 
-// Define the required shape for the update profile payload
+// --- LOCAL TYPES ---
+
+// Define a type that represents the full user object expected from the store, 
+// including the optional profiles, for type safety assertion.
+interface FullUser extends User {
+    attorneyProfile?: AttorneyProfile | null;
+}
+
 interface ProfileFormState {
     fullName: string;
     phoneNumber: string;
     // Attorney-specific fields
     firmName?: string;
     bio?: string;
-    hourlyRate?: number;
+    hourlyRate?: number; // Must be number or undefined for submission
 }
+
+// --- COMPONENT ---
 
 export default function ProfileSettings() {
     const { user } = useAuthStore();
+    
+    // FIX 1: Assert the user object type to include the profile data (FullUser)
+    // We trust that the auth store gives us the complete structure when available.
+    const fullUser = user as FullUser | undefined; 
+
     const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
     const { mutate: uploadAvatar, isPending: isUploading } = useUploadAvatar();
     
-    // Check if user is an attorney
-    const isAttorney = user?.userType === 'attorney';
-    const attorneyProfile = user?.attorneyProfile;
+    const isAttorney = fullUser?.userType === 'attorney';
+    
+    // FIX 2: Access the attorneyProfile via the asserted variable (fullUser)
+    const attorneyProfile = fullUser?.attorneyProfile; // This is now type-safe
 
     // --- State Initialization ---
     const [formData, setFormData] = useState<ProfileFormState>(() => ({
-        // FIX 1: Initialize state robustly using user data
-        fullName: user?.fullName || '',
-        phoneNumber: user?.phoneNumber || '',
+        fullName: fullUser?.fullName || '',
+        phoneNumber: fullUser?.phoneNumber || '',
         
-        // Initialize attorney fields only if applicable
         ...(isAttorney && {
             firmName: attorneyProfile?.firmName || '',
             bio: attorneyProfile?.bio || '',
-            hourlyRate: attorneyProfile?.hourlyRate || undefined,
+            hourlyRate: attorneyProfile?.hourlyRate ?? undefined, // Use ?? undefined for safety
         }),
     }));
 
-    // Use useEffect to update state if user data loads later (e.g., on first load)
+    // --- Side Effect: Initial Hydration & Sync ---
     useEffect(() => {
-        if (user) {
+        if (fullUser) {
             setFormData({
-                fullName: user.fullName || '',
-                phoneNumber: user.phoneNumber || '',
-          
+                fullName: fullUser.fullName || '',
+                phoneNumber: fullUser.phoneNumber || '',
+                // Only set attorney fields if user is an attorney and data exists
+                ...(isAttorney && {
+                    firmName: attorneyProfile?.firmName || '',
+                    bio: attorneyProfile?.bio || '',
+                    hourlyRate: attorneyProfile?.hourlyRate ?? undefined,
+                })
             });
         }
-    }, [user, isAttorney, attorneyProfile]);
+    }, [fullUser, isAttorney, attorneyProfile]);
 
 
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -61,7 +80,6 @@ export default function ProfileSettings() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validation checks... (Your existing logic is fine here)
         if (file.size > 5 * 1024 * 1024) {
             setUploadError('Image size must be less than 5MB');
             return;
@@ -87,17 +105,19 @@ export default function ProfileSettings() {
         e.preventDefault();
         setUpdateError(null);
 
-        // Filter out email as it cannot be changed and we only want to send fields that were updated or are editable.
-        const payload: Partial<ProfileFormState> = {
-            fullName: formData.fullName,
-            phoneNumber: formData.phoneNumber,
-            // Include attorney-specific fields in the payload if they exist
+        // Construct the payload, converting empty strings/zeroes to undefined/null for cleaner API interaction
+        const payload: ProfileFormState = {
+            fullName: formData.fullName || undefined,
+            phoneNumber: formData.phoneNumber || undefined,
+            
+            // Conditionally add attorney fields, ensuring they are not empty strings
             ...(isAttorney && {
-                firmName: formData.firmName,
-                bio: formData.bio,
-                hourlyRate: formData.hourlyRate,
+                firmName: formData.firmName || undefined,
+                bio: formData.bio || undefined,
+                // Ensure hourlyRate is a number or undefined, not 0 or empty string
+                hourlyRate: formData.hourlyRate && formData.hourlyRate > 0 ? formData.hourlyRate : undefined,
             })
-        };
+        } as ProfileFormState; // Assert as the payload structure type
 
         updateProfile(payload, {
             onSuccess: () => {
@@ -108,9 +128,13 @@ export default function ProfileSettings() {
             },
         });
     };
+
+    const handleInputChange = (field: keyof ProfileFormState, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
     
     // Safety check for user data loaded
-    if (!user) {
+    if (!fullUser) {
         return <div className="text-center py-10 text-gray-500">
             <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> Loading user data...
         </div>;
@@ -129,9 +153,9 @@ export default function ProfileSettings() {
                 
                 <div className="flex items-center gap-6">
                     <Avatar
-                        // FIX 2: Safely pass the src prop
-                        src={user.avatarUrl ?? undefined} 
-                        name={user.fullName || 'User'}
+                        // FIX 3: Safely pass the src prop by converting null to undefined
+                        src={fullUser.avatarUrl ?? undefined} 
+                        name={fullUser.fullName || 'User'}
                         size="xl"
                     />
                     
@@ -151,7 +175,6 @@ export default function ProfileSettings() {
                                     isUploading ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             >
-                                {/* ... (omitted loading text for brevity) ... */}
                                 {isUploading ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -194,8 +217,7 @@ export default function ProfileSettings() {
                 <Input
                     label="Email Address"
                     type="email"
-                    // Use the email directly from the store as it is disabled
-                    value={user.email} 
+                    value={fullUser.email} 
                     disabled
                     className="bg-gray-50 cursor-not-allowed"
                 />
@@ -215,7 +237,8 @@ export default function ProfileSettings() {
                         
                         <Input
                             label="Firm / Practice Name"
-                            value={formData.firmName || ''}
+                            // If formData.firmName is undefined, use '' for controlled input compatibility
+                            value={formData.firmName || ''} 
                             onChange={(e) => setFormData({ ...formData, firmName: e.target.value })}
                             placeholder="Doe & Associates Law Firm"
                             leftIcon={<Briefcase className="w-5 h-5" />}
@@ -232,9 +255,11 @@ export default function ProfileSettings() {
                         <Input
                             label={`Hourly Rate (NGN) - Currently: ${formData.hourlyRate ? formatCurrency(formData.hourlyRate) : 'N/A'}`}
                             type="number"
-                            value={formData.hourlyRate || ''}
+                            // If hourlyRate is undefined or 0, use '' for controlled input compatibility
+                            value={formData.hourlyRate || ''} 
                             onChange={(e) => setFormData({ 
                                 ...formData, 
+                                // Store as number if present, otherwise undefined
                                 hourlyRate: e.target.value ? Number(e.target.value) : undefined 
                             })}
                             placeholder="e.g., 50000"

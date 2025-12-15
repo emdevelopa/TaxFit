@@ -232,3 +232,9 @@ export interface ITaxBenefit {
   amount: number;
   category: string;
 }
+
+export interface ResetPasswordInput {
+  token: string;
+  newPassword: string; 
+  confirmPassword: string;
+}

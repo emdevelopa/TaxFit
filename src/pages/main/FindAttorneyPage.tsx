@@ -8,7 +8,7 @@ import Layout from '@/components/layout/Layout';
 import Avatar from '@/components/common/Avatar';
 import { useAuthStore } from '@/store/auth-store';
 import { formatCurrency } from '@/utils/helpers';
-import { handleApiError } from '@/lib/api-client';
+import apiClient, { handleApiError } from '@/lib/api-client';
 import { useAttorneySearch } from '@/hooks/attorney/use-attorney-search'; 
 import type { Attorney, AttorneySearchFilters } from '@/types'; 
 

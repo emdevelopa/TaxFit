@@ -18,9 +18,9 @@ export default function ProfileCard({ user, isUploading = false, onImageUpload }
         {/* Avatar with Upload Button */}
         <div className="relative inline-block mb-4">
           <Avatar
-            src={user?.avatarUrl}
+            src={user?.avatarUrl ?? undefined}
             name={user?.fullName || 'User'}
-            size="2xl"
+            size="xl"
           />
           
           {onImageUpload && (
