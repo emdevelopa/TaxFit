@@ -111,7 +111,7 @@ export default function TaxDashboardPage() {
                 <TrendingUp className="w-5 h-5 text-primary-600" />
               </div>
               <div className="text-2xl font-bold text-primary-700">
-                {(NIGERIAN_VAT_RATE * 100).toFixed(0)}%
+                {(no * 100).toFixed(0)}%
               </div>
               <div className="text-xs text-gray-500 mt-1">Nigerian VAT</div>
             </Card>
