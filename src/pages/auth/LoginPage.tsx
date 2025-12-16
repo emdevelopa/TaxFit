@@ -31,28 +31,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header/>
-      <div className="container mx-auto px-6 md:px-12 lg:px-16">
-        <div className="min-h-screen flex items-center justify-center py-16">
+      
+      <div className="flex-1 flex">
+        {/* Left Side - Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-md">
             {/* Header */}
-            <div className="mb-12 space-y-6">
+            <div className="mb-8 sm:mb-12 space-y-4 sm:space-y-6">
               <div className="flex items-center gap-4">
                 <div className="h-px w-12 bg-primary-500"></div>
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500 font-light">
-                  Account Access
+                <span className="text-xs text-gray-500 font-medium">
+                  Account access
                 </span>
               </div>
 
-              <h1 className="text-5xl md:text-6xl font-extralight text-gray-900 tracking-tight leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
                 Welcome
                 <br />
-                <span className="italic font-light text-primary-600">back</span>
+                <span className="text-primary-600">back</span>
               </h1>
 
-              <p className="text-lg text-gray-600 font-light">
-                Sign in to access your tax advisory dashboard.
+              <p className="text-base sm:text-lg text-gray-600">
+                Sign in to access your dashboard
               </p>
             </div>
 
@@ -65,7 +67,6 @@ export default function LoginPage() {
                   error={errors.email?.message}
                   {...register('email')}
                   placeholder="your.email@company.com"
-                  className="font-light"
                 />
               </div>
 
@@ -76,7 +77,6 @@ export default function LoginPage() {
                   error={errors.password?.message}
                   {...register('password')}
                   placeholder="Enter your password"
-                  className="font-light"
                 />
                 <button
                   type="button"
@@ -88,13 +88,13 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-gray-600 font-light">
+                <label className="flex items-center gap-2 text-gray-600">
                   <input type="checkbox" className="rounded border-gray-300" />
                   Remember me
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-primary-600 hover:text-primary-700 font-light"
+                  className="text-primary-600 hover:text-primary-700"
                 >
                   Forgot password?
                 </Link>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 type="submit"
                 size="lg"
                 disabled={isPending}
-                className="w-full bg-secondary-900 hover:bg-secondary-800 text-white group"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white group"
               >
                 <span className="flex items-center justify-center gap-2">
                   {isPending ? 'Signing in...' : 'Sign in'}
@@ -115,11 +115,11 @@ export default function LoginPage() {
 
             {/* Footer */}
             <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-              <p className="text-sm text-gray-600 font-light">
+              <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link
                   to="/register"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="text-primary-600 hover:text-primary-700 font-semibold"
                 >
                   Create account
                 </Link>
@@ -127,7 +127,44 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+
+        {/* Right Side - Image */}
+        <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
+          <img 
+            src="/Users/user/TaxFit/src/images/attorney.png"
+            alt="Tax attorney consultation"
+            className="w-full h-full object-cover opacity-90"
+            onError={(e) => {
+              // Fallback to gradient if image doesn't exist
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          {/* Fallback gradient */}
+          <div className="hidden absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-800 to-secondary-900">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white p-12">
+                <h2 className="text-4xl font-bold mb-4">Welcome to Tax-FIT</h2>
+                <p className="text-xl text-gray-200">Your trusted tax attorney platform</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+          
+          {/* Content Overlay */}
+          <div className="absolute bottom-12 left-12 right-12 text-white">
+            <h2 className="text-3xl font-bold mb-4">
+              Professional tax guidance
+            </h2>
+            <p className="text-lg text-gray-200">
+              Connect with verified tax attorneys across Nigeria
+            </p>
+          </div>
+        </div>
       </div>
+      
       <Footer/>
     </div>
   );
