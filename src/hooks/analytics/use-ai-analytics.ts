@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient, { handleApiError } from '@/lib/api-client';
 import type { ApiError, ApiResponse } from '@/types'; 
 
-// --- 1. Optimization Types (from previous fix) ---
+// --- 1. Optimization Types ---
 
 export interface OptimizationRecommendation {
   id: number;
@@ -13,52 +13,38 @@ export interface OptimizationRecommendation {
   potentialSavings: number;
 }
 
-// 🎯 FIX 1A: Define the payload structure for the Optimization response
 type OptimizationPayload = {
     recommendations: OptimizationRecommendation[];
     totalSavings: number;
 };
 
-// 🎯 FIX 1B: Remove the conflicting interface definition (we'll use ApiResponse<T> directly)
-// interface ExpenseOptimizationResponse extends ApiResponse<void> { ... }
-
-
-// --- 2. Expense Summary Types (NEW) ---
+// --- 2. Expense Summary Types ---
 
 export interface ExpenseSummary {
     totalExpenses: number;
     approvedDeductibleAmount: number;
     pendingReviewCount: number;
 }
-// 🎯 FIX 2: Remove the conflicting interface definition
-// interface ExpenseSummaryResponse extends ApiResponse<void> { ... }
 
-
-// --- 3. Monthly Expenses Types (NEW) ---
+// --- 3. Monthly Expenses Types ---
 
 export interface MonthlyExpense {
     month: string; // e.g., "Jan 2025"
     totalApprovedAmount: number;
 }
-// 🎯 FIX 3: Remove the conflicting interface definition
-// interface MonthlyExpensesResponse extends ApiResponse<void> { ... }
 
-
-// --- 4. Expense Anomaly Types (NEW) ---
+// --- 4. Expense Anomaly Types ---
 
 export interface ExpenseAnomaly {
     id: string;
     expenseTitle: string;
     amount: number;
     date: string;
-    reason: string; // e.g., "Amount significantly higher than average for this category."
+    reason: string;
 }
-// 🎯 FIX 4: Remove the conflicting interface definition
-// interface ExpenseAnomaliesResponse extends ApiResponse<void> { ... }
-
 
 // ====================================================================
-// A. AI OPTIMIZATION INSIGHTS (Query)
+// A. AI OPTIMIZATION INSIGHTS (Query) - WITH ERROR HANDLING
 // ====================================================================
 /**
  * Hook to fetch AI-powered expense optimization insights.
@@ -68,17 +54,49 @@ export function useOptimizeExpenses() {
     return useQuery<OptimizationPayload, ApiError>({
         queryKey: ['aiOptimizationInsights'],
         queryFn: async () => {
-            // 🎯 FIX 1C: Use ApiResponse<OptimizationPayload> directly
-            const response = await apiClient.post<ApiResponse<OptimizationPayload>>('/ai/expenses/optimize');
-            return response.data.data;
+            try {
+                const response = await apiClient.post<ApiResponse<OptimizationPayload>>('/ai/expenses/optimize');
+                return response.data.data;
+            } catch (error: any) {
+                console.error('❌ AI Optimization Error:', error);
+                
+                // Handle 500 Internal Server Error
+                if (error.response?.status === 500) {
+                    const errorMessage = error.response?.data?.message || error.response?.data?.error;
+                    
+                    // Check if it's an API configuration issue
+                    if (errorMessage?.includes('API key') || 
+                        errorMessage?.includes('not configured') ||
+                        errorMessage?.includes('OpenAI')) {
+                        throw new Error('AI optimization service is not configured yet. This feature is coming soon!');
+                    }
+                    
+                    // Generic 500 error
+                    throw new Error('AI optimization service is temporarily unavailable. Please try again later.');
+                }
+                
+                // Handle 404 Not Found
+                if (error.response?.status === 404) {
+                    throw new Error('AI optimization feature is not available yet. This feature is coming soon!');
+                }
+                
+                // Handle network errors
+                if (!error.response) {
+                    throw new Error('Unable to connect to the server. Please check your internet connection.');
+                }
+                
+                // Re-throw other errors with helpful message
+                throw new Error(error.response?.data?.message || 'Failed to fetch optimization insights.');
+            }
         },
         staleTime: 5 * 60 * 1000, 
-        refetchOnWindowFocus: false, 
+        refetchOnWindowFocus: false,
+        retry: false, // Don't retry on errors (500 errors won't be fixed by retrying)
     });
 }
 
 // ====================================================================
-// B. EXPENSE SUMMARY CARDS (NEW)
+// B. EXPENSE SUMMARY CARDS - WITH ERROR HANDLING
 // ====================================================================
 
 /**
@@ -89,17 +107,29 @@ export function useExpenseSummary() {
     return useQuery<ExpenseSummary, ApiError>({
         queryKey: ['expenseSummary'],
         queryFn: async () => {
-            // 🎯 FIX 2: Use ApiResponse<ExpenseSummary> directly
-            const response = await apiClient.get<ApiResponse<ExpenseSummary>>('/analytics/expenses/summary');
-            return response.data.data;
+            try {
+                const response = await apiClient.get<ApiResponse<ExpenseSummary>>('/analytics/expenses/summary');
+                return response.data.data;
+            } catch (error: any) {
+                // If endpoint doesn't exist, return default data
+                if (error.response?.status === 404 || error.response?.status === 500) {
+                    console.log('ℹ️ Expense summary endpoint not available, using defaults');
+                    return {
+                        totalExpenses: 0,
+                        approvedDeductibleAmount: 0,
+                        pendingReviewCount: 0,
+                    };
+                }
+                throw error;
+            }
         },
         staleTime: 5 * 60 * 1000,
+        retry: false,
     });
 }
 
-
 // ====================================================================
-// C. MONTHLY APPROVED EXPENSES (NEW)
+// C. MONTHLY APPROVED EXPENSES - WITH ERROR HANDLING
 // ====================================================================
 
 /**
@@ -110,16 +140,25 @@ export function useMonthlyExpenses() {
     return useQuery<MonthlyExpense[], ApiError>({
         queryKey: ['monthlyExpenses'],
         queryFn: async () => {
-            // 🎯 FIX 3: Use ApiResponse<MonthlyExpense[]> directly
-            const response = await apiClient.get<ApiResponse<MonthlyExpense[]>>('/analytics/expenses/monthly');
-            return response.data.data;
+            try {
+                const response = await apiClient.get<ApiResponse<MonthlyExpense[]>>('/analytics/expenses/monthly');
+                return response.data.data;
+            } catch (error: any) {
+                // If endpoint doesn't exist, return empty array
+                if (error.response?.status === 404 || error.response?.status === 500) {
+                    console.log('ℹ️ Monthly expenses endpoint not available, using empty data');
+                    return [];
+                }
+                throw error;
+            }
         },
         staleTime: 5 * 60 * 1000,
+        retry: false,
     });
 }
 
 // ====================================================================
-// D. EXPENSE ANOMALIES (NEW)
+// D. EXPENSE ANOMALIES - WITH ERROR HANDLING
 // ====================================================================
 
 /**
@@ -130,11 +169,30 @@ export function useExpenseAnomalies() {
     return useQuery<ExpenseAnomaly[], ApiError>({
         queryKey: ['expenseAnomalies'],
         queryFn: async () => {
-            // 🎯 FIX 4: Use ApiResponse<ExpenseAnomaly[]> directly
-            const response = await apiClient.post<ApiResponse<ExpenseAnomaly[]>>('/ai/expenses/anomalies');
-            return response.data.data;
+            try {
+                const response = await apiClient.post<ApiResponse<ExpenseAnomaly[]>>('/ai/expenses/anomalies');
+                return response.data.data;
+            } catch (error: any) {
+                console.error('❌ Expense Anomalies Error:', error);
+                
+                // Handle 500/404 errors gracefully
+                if (error.response?.status === 500 || error.response?.status === 404) {
+                    const errorMessage = error.response?.data?.message;
+                    
+                    if (errorMessage?.includes('AI') || errorMessage?.includes('not configured')) {
+                        throw new Error('Anomaly detection is not available yet. This feature is coming soon!');
+                    }
+                    
+                    // Return empty array for development
+                    console.log('ℹ️ Anomaly detection not available, returning empty data');
+                    return [];
+                }
+                
+                throw error;
+            }
         },
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
+        retry: false,
     });
 }

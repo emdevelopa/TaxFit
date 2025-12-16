@@ -9,6 +9,8 @@ import Select from '@/components/common/Select';
 import Button from '@/components/common/Button';
 import { useRegister } from '@/hooks/auth/use-auth';
 import { registerSchema } from '@/lib/validations';
+import { Header } from '@/components/layout';
+import Footer from '@/components/layout/Footer';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -43,41 +45,43 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-6 md:px-12 lg:px-16">
-        <div className="min-h-screen flex items-center justify-center py-16">
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header/>
+      
+      <div className="flex-1 flex">
+        {/* Left Side - Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-2xl">
             {/* Header */}
-            <div className="mb-12 space-y-6">
+            <div className="mb-8 sm:mb-12 space-y-4 sm:space-y-6">
               <div className="flex items-center gap-4">
                 <div className="h-px w-12 bg-primary-500"></div>
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500 font-light">
-                  New Account
+                <span className="text-xs text-gray-500 font-medium">
+                  New account
                 </span>
               </div>
 
-              <h1 className="text-5xl md:text-6xl font-extralight text-gray-900 tracking-tight leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
                 Begin your
                 <br />
-                <span className="italic font-light text-primary-600">journey</span>
+                <span className="text-primary-600">journey</span>
               </h1>
 
-              <p className="text-lg text-gray-600 font-light">
-                Create your account and access world-class tax advisory services.
+              <p className="text-base sm:text-lg text-gray-600">
+                Create your account and find the right tax attorney
               </p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* --- Core Fields --- */}
+              {/* Core Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
                   label="Full name"
                   error={errors.fullName?.message}
                   {...registerField('fullName')}
                   placeholder="John Doe"
-                  className="font-light"
                 />
 
                 <Input
@@ -86,7 +90,6 @@ export default function RegisterPage() {
                   error={errors.email?.message}
                   {...registerField('email')}
                   placeholder="your.email@company.com"
-                  className="font-light"
                 />
               </div>
 
@@ -97,7 +100,6 @@ export default function RegisterPage() {
                   error={errors.phoneNumber?.message}
                   {...registerField('phoneNumber')}
                   placeholder="+234 800 000 0000"
-                  className="font-light"
                 />
 
                 <Select
@@ -108,56 +110,50 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* --- Conditional Attorney Fields --- */}
+              {/* Conditional Attorney Fields */}
               {isAttorney && (
                 <div className="space-y-6 border-t pt-6 border-gray-200">
-                    <h2 className="text-xl font-semibold text-gray-700">Attorney Credentials</h2>
+                    <h2 className="text-xl font-semibold text-gray-700">Attorney credentials</h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input
-                            label="Firm / Practice Name"
+                            label="Firm / Practice name"
                             error={errors.firmName?.message}
                             {...registerField('firmName')}
                             placeholder="Doe & Associates Law Firm"
                             leftIcon={<Briefcase className="w-5 h-5" />}
-                            className="font-light"
                         />
                         
                         <Input
-                            label="Professional License Number"
+                            label="Professional license number"
                             error={errors.professionalLicenseNumber?.message}
                             {...registerField('professionalLicenseNumber')}
                             placeholder="NBA/2020/12345"
                             leftIcon={<GraduationCap className="w-5 h-5" />}
-                            className="font-light"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Input
-                            label="Years of Experience"
+                            label="Years of experience"
                             type="number"
-                            // FIX APPLIED HERE: Use optional chaining on the field property itself
                             error={errors.yearsOfExperience?.message} 
                             {...registerField('yearsOfExperience', { valueAsNumber: true })}
                             placeholder="e.g., 5"
-                            className="font-light"
                         />
                         <Input
-                            label="Hourly Rate (NGN)"
+                            label="Hourly rate (NGN)"
                             type="number"
-                            // FIX APPLIED HERE: Use optional chaining on the field property itself
                             error={errors.hourlyRate?.message}
                             {...registerField('hourlyRate', { valueAsNumber: true })}
                             placeholder="e.g., 50000"
                             leftIcon={<DollarSign className="w-5 h-5" />}
-                            className="font-light"
                         />
                     </div>
                 </div>
               )}
               
-              {/* --- Password Fields --- */}
+              {/* Password Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="relative">
                   <Input
@@ -166,7 +162,6 @@ export default function RegisterPage() {
                     error={errors.password?.message}
                     {...registerField('password')}
                     placeholder="Minimum 8 characters"
-                    className="font-light"
                   />
                   <button
                     type="button"
@@ -184,7 +179,6 @@ export default function RegisterPage() {
                     error={errors.confirmPassword?.message}
                     {...registerField('confirmPassword')}
                     placeholder="Re-enter password"
-                    className="font-light"
                   />
                   <button
                     type="button"
@@ -196,7 +190,7 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* --- Terms & Submit --- */}
+              {/* Terms & Submit */}
               <div>
                 <div className="flex items-start gap-3">
                   <input
@@ -204,7 +198,7 @@ export default function RegisterPage() {
                     {...registerField('acceptTerms')}
                     className="mt-1 rounded border-gray-300"
                   />
-                  <p className="text-sm text-gray-600 font-light">
+                  <p className="text-sm text-gray-600">
                     I agree to the{' '}
                     <Link to="/terms" className="text-primary-600 hover:text-primary-700">
                       Terms of Service
@@ -224,7 +218,7 @@ export default function RegisterPage() {
                 type="submit"
                 size="lg"
                 disabled={isPending}
-                className="w-full bg-secondary-900 hover:bg-secondary-800 text-white group"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white group"
               >
                 <span className="flex items-center justify-center gap-2">
                   {isPending ? 'Creating account...' : 'Create account'}
@@ -235,11 +229,11 @@ export default function RegisterPage() {
 
             {/* Footer */}
             <div className="mt-8 pt-8 border-t border-gray-200 text-center">
-              <p className="text-sm text-gray-600 font-light">
+              <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link
                   to="/login"
-                  className="text-primary-600 hover:text-primary-700 font-medium"
+                  className="text-primary-600 hover:text-primary-700 font-semibold"
                 >
                   Sign in
                 </Link>
@@ -247,7 +241,45 @@ export default function RegisterPage() {
             </div>
           </div>
         </div>
+
+        {/* Right Side - Image */}
+        <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
+          <img 
+            src="/assets/images/register-bg.jpg"
+            alt="Tax attorney services"
+            className="w-full h-full object-cover opacity-90"
+            onError={(e) => {
+              // Fallback to gradient if image doesn't exist
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+          {/* Fallback gradient */}
+          <div className="hidden absolute inset-0 bg-gradient-to-br from-secondary-900 via-secondary-800 to-primary-900">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white p-12">
+                <h2 className="text-4xl font-bold mb-4">Join Tax-FIT Today</h2>
+                <p className="text-xl text-gray-200">Access Nigeria's top tax attorneys</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+          
+          {/* Content Overlay */}
+          <div className="absolute bottom-12 left-12 right-12 text-white">
+            <h2 className="text-3xl font-bold mb-4">
+              Start your journey today
+            </h2>
+            <p className="text-lg text-gray-200">
+              Join thousands using Tax-FIT to find the perfect tax attorney
+            </p>
+          </div>
+        </div>
       </div>
+      
+      <Footer/>
     </div>
   );
 }

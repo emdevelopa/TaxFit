@@ -1,225 +1,254 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Scale, Briefcase, Building2, Globe, RefreshCw, BookOpen } from 'lucide-react';
 
+// Simplified services with realistic language for everyone
 const services = [
   {
-    number: '01',
-    title: 'Strategic Tax Planning',
-    description: 'Comprehensive tax strategies meticulously aligned with your business objectives. We architect solutions that maximize efficiency while maintaining complete regulatory compliance across all jurisdictions.',
+    icon: Scale,
+    title: 'Tax planning',
+    description: 'Get expert help to reduce your tax and save money legally. Our attorneys will create a custom plan that works for your business.',
     features: [
-      'Multi-year tax forecasting and scenario modeling',
-      'Cross-border optimization strategies',
-      'Investment structure analysis',
-      'Executive compensation planning',
-      'Succession and estate planning',
-      'Merger and acquisition tax due diligence'
+      'Save money on taxes',
+      'Plan for the future',
+      'Get expert advice',
+      'Stay within the law'
     ],
-    results: 'Average 35% reduction in effective tax rate'
+    results: 'Average 15-25% tax savings'
   },
   {
-    number: '02',
-    title: 'Compliance & Filing',
-    description: 'Meticulous attention to every regulatory requirement ensures accuracy, timeliness, and peace of mind. Our team manages the complexity so you can focus on your business.',
+    icon: Briefcase,
+    title: 'Tax compliance',
+    description: 'Stay up to date with your tax payments and avoid penalties. We help you file correctly and on time, every time.',
     features: [
-      'Corporate income tax returns',
-      'International tax compliance',
-      'Transfer pricing documentation',
-      'Quarterly estimated tax payments',
-      'Tax clearance certificates',
-      'Regulatory reporting and disclosures'
+      'File taxes correctly',
+      'Avoid late fees',
+      'Stay updated on tax rules',
+      'Get reminders for deadlines'
     ],
-    results: '99.9% accuracy rate, zero late filings'
+    results: '100% on-time filing'
   },
   {
-    number: '03',
-    title: 'Audit Defense & Representation',
-    description: 'Expert advocacy when tax authorities question your returns. We provide strategic representation backed by deep technical knowledge and decades of experience.',
+    icon: Building2,
+    title: 'Tax problems',
+    description: 'Resolve tax issues and get professional representation. If you have problems with tax authorities, we connect you with attorneys who can help.',
     features: [
-      'Pre-audit risk assessment',
-      'Complete audit representation',
-      'Documentation preparation and review',
-      'Negotiation with tax authorities',
-      'Appeals and dispute resolution',
-      'Settlement optimization'
+      'Handle tax disputes',
+      'Represent you in audits',
+      'Negotiate with tax office',
+      'Reduce penalties'
     ],
-    results: '92% favorable resolution rate'
+    results: '90%+ successful outcomes'
   },
   {
-    number: '04',
-    title: 'International Tax Services',
-    description: 'Navigate the complexities of global tax compliance with confidence. Our international specialists ensure seamless operations across borders.',
+    icon: Globe,
+    title: 'Business tax advice',
+    description: 'Get help with business taxes and regulations. Whether you\'re starting or growing, find attorneys who understand your industry.',
     features: [
-      'Cross-border transaction structuring',
-      'Permanent establishment analysis',
-      'Foreign tax credit optimization',
-      'Repatriation strategies',
-      'Treaty interpretation and application',
-      'Global mobility and expatriate taxation'
+      'Set up your business properly',
+      'Understand VAT and other taxes',
+      'Get ongoing support',
+      'Industry-specific guidance'
     ],
-    results: 'Supporting operations in 150+ countries'
+    results: 'Trusted by 10,000+ businesses'
   },
   {
-    number: '05',
-    title: 'Business Restructuring',
-    description: 'Transform your organizational structure for optimal tax efficiency. We design and implement restructuring strategies that reduce tax burden while enhancing operational effectiveness.',
+    icon: RefreshCw,
+    title: 'Business restructuring',
+    description: 'Reorganize your business to save on taxes. Our attorneys help you restructure legally and efficiently.',
     features: [
-      'Entity structure optimization',
-      'Spin-offs and separations',
-      'Asset reallocation strategies',
-      'Debt restructuring',
-      'Tax-free reorganizations',
-      'Post-merger integration'
+      'Optimize business structure',
+      'Reduce tax burden',
+      'Plan mergers properly',
+      'Handle transitions smoothly'
     ],
-    results: 'Average $15M+ in annual savings'
+    results: 'Average ₦1.5M+ savings'
   },
   {
-    number: '06',
-    title: 'Advisory & Training',
-    description: 'Empower your team with deep tax knowledge. Our customized training programs and ongoing advisory services keep you ahead of regulatory changes.',
+    icon: BookOpen,
+    title: 'Tax education',
+    description: 'Learn about taxes and stay informed. Get training and updates on tax laws that affect your business.',
     features: [
-      'Executive tax briefings',
-      'Customized training programs',
-      'Tax law update sessions',
-      'Industry-specific workshops',
-      'Best practices documentation',
-      'Dedicated advisory support'
+      'Understand tax basics',
+      'Learn new tax rules',
+      'Get expert guidance',
+      'Access resources anytime'
     ],
-    results: '1,000+ professionals trained annually'
+    results: '5,000+ trained business owners'
   }
 ];
 
 const approach = [
   {
-    title: 'Discovery',
-    description: 'We begin with comprehensive analysis of your business, industry, and unique challenges. Every engagement starts with deep understanding.'
+    title: 'Find your attorney',
+    description: 'Browse verified tax attorneys based on your specific needs and budget. Compare profiles, reviews, and expertise.'
   },
   {
-    title: 'Strategy',
-    description: 'Our senior advisors craft bespoke solutions tailored to your specific objectives. Each strategy is meticulously designed and tested.'
+    title: 'Book consultation',
+    description: 'Schedule a meeting at your convenience. Most attorneys offer free initial consultations to discuss your case.'
   },
   {
-    title: 'Implementation',
-    description: 'Seamless execution with minimal disruption. We manage every detail while keeping you informed at every stage.'
+    title: 'Get expert help',
+    description: 'Work directly with your attorney to resolve your tax issues or plan your tax strategy effectively.'
   },
   {
-    title: 'Optimization',
-    description: 'Continuous monitoring and refinement ensure your strategy evolves with your business and regulatory landscape.'
+    title: 'Stay compliant',
+    description: 'Receive ongoing support and guidance to ensure you remain compliant with all tax regulations.'
   }
 ];
 
 export default function ServicesPage() {
+  const navigate = useNavigate();
+
   return (
     <Layout>
-      <section className="relative py-32 bg-white">
-        <div className="container mx-auto px-6 md:px-12 lg:px-16">
+      {/* Hero Section */}
+      <section className="relative py-16 sm:py-24 md:py-32 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16">
           <div className="max-w-6xl mx-auto">
-            <div className="space-y-12">
-              <div className="space-y-8">
+            <div className="space-y-8 sm:space-y-12">
+              <div className="space-y-6 sm:space-y-8">
                 <div className="flex items-center gap-4">
-                  <div className="h-px w-16 bg-gray-900"></div>
-                  <span className="text-xs uppercase tracking-[0.3em] text-gray-500 font-light">
+                  <div className="h-px w-12 sm:w-16 bg-gray-900"></div>
+                  <span className="text-xs text-gray-500 font-medium">
                     Services
                   </span>
                 </div>
 
-                <h1 className="text-6xl md:text-7xl lg:text-8xl font-extralight text-gray-900 tracking-tight leading-[0.95]">
-                  Comprehensive tax
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                  Find the right tax attorney
                   <br />
-                  <span className="italic font-light">solutions</span>
+                  <span className="text-primary-600">for your needs</span>
                 </h1>
 
-                <p className="text-xl md:text-2xl text-gray-600 font-light leading-relaxed max-w-3xl">
-                  From strategic planning to audit defense, we deliver end-to-end tax services 
-                  designed for the world's most sophisticated enterprises.
+                <p className="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-3xl">
+                  Connect with verified tax attorneys who specialize in helping businesses 
+                  and individuals with all their tax needs.
                 </p>
               </div>
 
-              <div className="flex items-center gap-12 pt-8 border-t border-gray-200">
+              <div className="grid grid-cols-3 gap-6 sm:gap-12 pt-6 sm:pt-8 border-t border-gray-200">
                 <div>
-                  <div className="text-3xl font-light text-gray-900 mb-1">Six</div>
-                  <div className="text-xs uppercase tracking-wider text-gray-500">Core services</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">2,500+</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Attorneys</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-light text-gray-900 mb-1">150+</div>
-                  <div className="text-xs uppercase tracking-wider text-gray-500">Countries</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">50K+</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Cases solved</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-light text-gray-900 mb-1">24/7</div>
-                  <div className="text-xs uppercase tracking-wider text-gray-500">Support</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">24/7</div>
+                  <div className="text-xs sm:text-sm text-gray-600">Support</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <section className="py-32 bg-gray-50">
-        <div className="container mx-auto px-6 md:px-12 lg:px-16">
-          <div className="max-w-7xl mx-auto space-y-24">
-            {services.map((service, index) => (
-              <div key={index} className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-24 border-b border-gray-200 last:border-0">
-                <div className="lg:col-span-2">
-                  <div className="text-[140px] font-extralight text-gray-200 leading-none">
-                    {service.number}
-                  </div>
-                </div>
-                <div className="lg:col-span-10 space-y-8">
-                  <div className="space-y-4">
-                    <h2 className="text-4xl md:text-5xl font-light text-gray-900">
-                      {service.title}
-                    </h2>
-                    <p className="text-lg text-gray-600 leading-relaxed max-w-3xl">
-                      {service.description}
-                    </p>
-                  </div>
 
-                  {/* Features */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {service.features.map((feature, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="h-px w-6 bg-gray-900 mt-3 flex-shrink-0"></div>
-                        <span className="text-gray-700 leading-relaxed">{feature}</span>
+      {/* Services Section - All in ONE Div */}
+      <section className="py-16 sm:py-24 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="text-center mb-12 sm:mb-16">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3 sm:mb-4">
+                How we can help
+              </h2>
+              <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                Find attorneys who specialize in these areas
+              </p>
+            </div>
+
+            {/* All Services in ONE Container */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 md:p-12 space-y-12 sm:space-y-16">
+              {services.map((service, index) => {
+                const Icon = service.icon;
+                return (
+                  <div 
+                    key={index} 
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 pb-12 sm:pb-16 border-b border-gray-200 last:border-0 last:pb-0"
+                  >
+                    {/* Icon & Title */}
+                    <div className="lg:col-span-3">
+                      <div className="flex items-center gap-4 lg:flex-col lg:items-start">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-primary-600" />
+                        </div>
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 lg:mt-4">
+                          {service.title}
+                        </h2>
                       </div>
-                    ))}
-                  </div>
+                    </div>
 
-                  {/* Results */}
-                  <div className="pt-6 border-t border-gray-200">
-                    <div className="text-sm uppercase tracking-wider text-gray-500 mb-2">Results</div>
-                    <div className="text-xl font-light text-gray-900">{service.results}</div>
+                    {/* Content */}
+                    <div className="lg:col-span-9 space-y-6 sm:space-y-8">
+                      <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+                        {service.description}
+                      </p>
+
+                      {/* Features */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        {service.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className="h-px w-6 bg-primary-600 mt-3 flex-shrink-0"></div>
+                            <span className="text-sm sm:text-base text-gray-700 leading-relaxed">{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Results */}
+                      <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div>
+                            <div className="text-xs sm:text-sm text-gray-500 mb-1">Results</div>
+                            <div className="text-lg sm:text-xl font-semibold text-primary-600">{service.results}</div>
+                          </div>
+                          <button
+                            onClick={() => navigate('/find-attorney')}
+                            className="inline-flex items-center gap-2 text-sm sm:text-base text-primary-600 font-semibold hover:gap-3 transition-all duration-300"
+                          >
+                            Find attorney
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
-      <section className="py-32 bg-white">
-        <div className="container mx-auto px-6 md:px-12 lg:px-16">
+
+      {/* How It Works */}
+      <section className="py-16 sm:py-24 md:py-32 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16">
           <div className="max-w-6xl mx-auto">
-            <div className="mb-20">
-              <div className="flex items-center gap-4 mb-8">
+            <div className="mb-12 sm:mb-16 md:mb-20">
+              <div className="flex items-center gap-4 mb-6 sm:mb-8">
                 <div className="h-px w-12 bg-gray-900"></div>
-                <span className="text-xs uppercase tracking-[0.3em] text-gray-500">Our Approach</span>
+                <span className="text-xs text-gray-500 font-medium">How it works</span>
               </div>
-              <h2 className="text-5xl md:text-6xl font-extralight text-gray-900 leading-tight">
-                A methodology refined
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
+                Simple steps to
                 <br />
-                <span className="italic font-light">over a decade</span>
+                <span className="text-primary-600">get expert help</span>
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-300">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-200 rounded-2xl overflow-hidden">
               {approach.map((step, index) => (
-                <div key={index} className="bg-white p-12 hover:bg-gray-50 transition-colors duration-300">
-                  <div className="space-y-6">
-                    <div className="text-7xl font-extralight text-gray-200 leading-none">
+                <div key={index} className="bg-white p-6 sm:p-8 md:p-12 hover:bg-gray-50 transition-colors duration-300">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-100 leading-none">
                       {String(index + 1).padStart(2, '0')}
                     </div>
-                    <div className="space-y-3">
-                      <h3 className="text-2xl font-light text-gray-900">{step.title}</h3>
-                      <p className="text-gray-600 leading-relaxed">{step.description}</p>
+                    <div className="space-y-2 sm:space-y-3">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900">{step.title}</h3>
+                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{step.description}</p>
                     </div>
                   </div>
                 </div>
@@ -228,39 +257,42 @@ export default function ServicesPage() {
           </div>
         </div>
       </section>
-      <section className="py-32 bg-gray-50">
-        <div className="container mx-auto px-6 md:px-12 lg:px-16">
-          <div className="max-w-4xl mx-auto text-center space-y-12">
-            <div className="space-y-8">
-              <h2 className="text-5xl md:text-6xl font-extralight text-gray-900 leading-tight">
-                Let's discuss your
+
+      {/* CTA Section */}
+      <section className="py-16 sm:py-24 md:py-32 bg-gradient-to-br from-primary-900 to-secondary-900">
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16">
+          <div className="max-w-4xl mx-auto text-center space-y-8 sm:space-y-12">
+            <div className="space-y-6 sm:space-y-8">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight">
+                Ready to find your
                 <br />
-                <span className="italic font-light">specific needs</span>
+                <span className="text-primary-200">tax attorney?</span>
               </h2>
-              <p className="text-xl text-gray-600 font-light max-w-2xl mx-auto leading-relaxed">
-                Schedule a consultation to explore how our services can be tailored to your unique requirements.
+              <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
+                Browse verified attorneys and book your consultation today
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link 
-                to="/register"
-                className="group relative px-10 py-5 bg-gray-900 text-white overflow-hidden transition-all duration-500 hover:px-12 inline-block"
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <button
+                onClick={() => navigate('/find-attorney')}
+                className="px-8 py-4 sm:px-10 sm:py-5 bg-white text-primary-900 rounded-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 inline-flex items-center justify-center gap-2"
               >
-                <span className="relative z-10 text-sm tracking-wider uppercase font-light flex items-center justify-center gap-3">
-                  Schedule consultation
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </span>
-                <div className="absolute inset-0 bg-gray-800 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
-              </Link>
+                Find attorney
+                <ArrowRight className="w-5 h-5" />
+              </button>
               
-              <Link 
-                to="/find-attorney"
-                className="px-10 py-5 text-sm tracking-wider uppercase font-light text-gray-900 hover:text-gray-600 transition-colors border border-gray-300 hover:border-gray-900 inline-block text-center"
+              <button
+                onClick={() => navigate('/register')}
+                className="px-8 py-4 sm:px-10 sm:py-5 bg-transparent text-white rounded-lg border-2 border-white/30 font-bold hover:bg-white/10 transition-all duration-300"
               >
-                Browse attorneys
-              </Link>
+                Create account
+              </button>
             </div>
+
+            <p className="text-xs sm:text-sm text-gray-300">
+              Free consultation • Verified attorneys • Secure platform
+            </p>
           </div>
         </div>
       </section>
