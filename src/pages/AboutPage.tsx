@@ -144,7 +144,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary-900 via-primary-800 to-secondary-900 text-white py-16 sm:py-24 md:py-32 overflow-hidden">
         {/* Background */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0  overflow-hidden bg-[url('public/images/image.png')] bg-cover bg-center">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl animate-pulse"></div>
         </div>
@@ -152,8 +152,6 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/20 rounded-full mb-6 border border-primary-500/30">
-              <Sparkles className="w-5 h-5 text-primary-400" />
-              <span className="text-sm font-medium text-primary-300">About Tax-FIT</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               Connecting Nigerians with

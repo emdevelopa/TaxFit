@@ -1,10 +1,9 @@
-// src/hooks/admin/use-admin-audit.ts
+
 
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import type { AuditLogResult } from '@/types/admin-types';
 
-// Query filter interface
 interface AuditFilters {
   action?: string;
   resourceType?: string;
@@ -22,6 +21,6 @@ export function useAdminAuditLog(filters: AuditFilters) {
             });
             return data.data; 
         },
-        staleTime: 1000 * 60, // Logs can be slightly stale
+        staleTime: 1000 * 60, 
     });
 }

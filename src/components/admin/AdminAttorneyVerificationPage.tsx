@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Search, UserCheck, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Filter, Search, UserCheck, Clock, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 import { useAdminVerificationList } from '@/hooks/attorney/use-verification'; 
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -12,7 +12,7 @@ import Button from '@/components/common/Button';
 // Define the shape of the filter form inputs
 interface FilterFormInputs {
     search: string;
-    status: 'all' | 'pending' | 'approved' | 'rejected';
+    status: 'all' | 'true' | 'false'; // ✅ Changed to match new API
     sortBy: 'submittedAt' | 'name' | 'experience' | 'status';
     sortOrder: 'asc' | 'desc';
 }
@@ -22,7 +22,7 @@ const AdminAttorneyVerificationPage: React.FC = () => {
     const [page, setPage] = React.useState(1);
     
     const [appliedFilters, setAppliedFilters] = React.useState({
-        status: 'pending',
+        status: 'true', // ✅ Changed from 'pending' to 'true'
         sortBy: 'submittedAt',
         sortOrder: 'desc',
         search: '',
@@ -31,7 +31,7 @@ const AdminAttorneyVerificationPage: React.FC = () => {
     const { register, watch, handleSubmit } = useForm<FilterFormInputs>({
         defaultValues: {
             search: '',
-            status: 'pending',
+            status: 'true', // ✅ Changed from 'pending' to 'true'
             sortBy: 'submittedAt',
             sortOrder: 'desc',
         },
@@ -41,7 +41,7 @@ const AdminAttorneyVerificationPage: React.FC = () => {
     const sortByWatch = watch('sortBy');
     const sortOrderWatch = watch('sortOrder');
 
-    const { data, isLoading, isFetching } = useAdminVerificationList({
+    const { data, isLoading, isFetching, isError, error } = useAdminVerificationList({
         page,
         limit: 10,
         ...appliedFilters,
@@ -77,7 +77,25 @@ const AdminAttorneyVerificationPage: React.FC = () => {
     };
     
     const handleViewDetails = (attorneyId: string) => {
-        navigate(`/admin/attorneys/${attorneyId}/review`);
+        // Find the attorney in the current list using comprehensive ID check
+        const attorney = attorneys.find(a => {
+            const id = a._id || a.id || (a as any).attorneyId || (a as any).userId?.id;
+            return id === attorneyId;
+        });
+        
+        console.log('📤 Attempting to navigate:');
+        console.log('   Attorney ID:', attorneyId);
+        console.log('   Found attorney:', attorney);
+        
+        if (attorney) {
+            // Pass the attorney data via navigation state
+            navigate(`/admin/attorneys/${attorneyId}/review`, { 
+                state: { attorney } 
+            });
+        } else {
+            console.warn('⚠️ Attorney not found in list, navigating without state');
+            navigate(`/admin/attorneys/${attorneyId}/review`);
+        }
     };
 
     return (
@@ -86,14 +104,53 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                 <header className="mb-8 flex justify-between items-center">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                            <UserCheck className="w-7 h-7 text-primary-600" /> Attorney Verification Queue
+                            <UserCheck className="w-7 h-7 text-primary-600" /> Attorney verification queue
                         </h1>
-                        <p className="text-gray-600 mt-1">Review and approve submissions from new attorneys.</p>
+                        <p className="text-gray-600 mt-1">Review and approve submissions from new attorneys</p>
                     </div>
                     <div className="text-xl font-semibold text-primary-600">
-                        Total Queued: {data?.total || 0}
+                        Total queued: {data?.total || 0}
                     </div>
                 </header>
+
+                {/* Show error message if API fails */}
+                {isError && (
+                    <Card className="mb-8 p-6 bg-red-50 border-red-200">
+                        <div className="flex items-start gap-3 text-red-800">
+                            <AlertCircle className="w-6 h-6 flex-shrink-0 mt-1" />
+                            <div className="flex-1">
+                                <p className="font-semibold text-lg mb-2">Failed to load attorney verification queue</p>
+                                <p className="text-sm mb-3">
+                                    <strong>Error:</strong> {error?.response?.data?.message || error?.message || 'Internal server error (500)'}
+                                </p>
+                                <div className="bg-white bg-opacity-50 rounded p-3 mb-3">
+                                    <p className="text-sm font-semibold mb-2">Common causes:</p>
+                                    <ul className="text-sm ml-4 list-disc space-y-1">
+                                        <li><strong>Database connection issue</strong> - Backend can't connect to MongoDB</li>
+                                        <li><strong>No attorneys registered yet</strong> - The attorneys collection is empty</li>
+                                        <li><strong>Missing indexes</strong> - Database needs proper indexes for the query</li>
+                                        <li><strong>Authentication issue</strong> - Admin token might not be properly validated</li>
+                                        <li><strong>Endpoint logic error</strong> - Bug in the backend code</li>
+                                    </ul>
+                                </div>
+                                <div className="text-sm">
+                                    <p className="font-semibold mb-1">To debug:</p>
+                                    <ol className="ml-4 list-decimal space-y-1">
+                                        <li>Check browser console for error details</li>
+                                        <li>Check backend server logs</li>
+                                        <li>Verify database connection</li>
+                                        <li>Test the endpoint with Postman/Thunder Client</li>
+                                    </ol>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-red-300">
+                                    <p className="text-xs">
+                                        <strong>Request details:</strong> GET /api/v1/admin/attorneys/verification?page={page}&limit=10&status={appliedFilters.status}&sortBy={appliedFilters.sortBy}&sortOrder={appliedFilters.sortOrder}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                )}
 
                 <Card className="p-6 mb-8">
                     <form onSubmit={handleSubmit(handleFilterSubmit)}>
@@ -110,20 +167,19 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                                 </div>
                             </div>
                             <select {...register('status')} className="p-2 border border-gray-300 rounded-lg">
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="all">All Statuses</option>
+                                <option value="true">Verified</option>
+                                <option value="false">Not verified</option>
+                                <option value="all">All statuses</option>
                             </select>
                             <select {...register('sortBy')} className="p-2 border border-gray-300 rounded-lg">
-                                <option value="submittedAt">Date Submitted</option>
+                                <option value="submittedAt">Date submitted</option>
                                 <option value="name">Name</option>
                                 <option value="experience">Experience</option>
                             </select>
                         </div>
                         <div className="mt-4 flex justify-end">
                             <Button type="submit" variant="primary" className="w-full md:w-auto">
-                                <Filter className="w-4 h-4 mr-2" /> Apply Filters
+                                <Filter className="w-4 h-4 mr-2" /> Apply filters
                             </Button>
                         </div>
                     </form>
@@ -133,12 +189,12 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attorney Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Attorney name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firm / Email</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3">H</th>
+                                <th className="px-6 py-3">Action</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -149,6 +205,12 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                                         Fetching queue...
                                     </td>
                                 </tr>
+                            ) : isError ? (
+                                <tr>
+                                    <td colSpan={6} className="text-center py-12 text-gray-500">
+                                        Unable to load attorneys. Please check the error message above.
+                                    </td>
+                                </tr>
                             ) : attorneys.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="text-center py-12 text-gray-500">
@@ -156,21 +218,31 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                attorneys.map((attorney) => {
-                                    const statusDisplay = getStatusDisplay(attorney.attorneyProfile.verificationStatus || 'pending');
-                                    const submittedDate = attorney.attorneyProfile.submittedForVerificationAt ? new Date(attorney.attorneyProfile.submittedForVerificationAt) : null;
+                                attorneys.map((attorney, index) => {
+                                    // ✅ Try all possible ID fields
+                                    const attorneyId = attorney._id || attorney.id || (attorney as any).attorneyId || (attorney as any).userId;
+                                    
+                                    // Debug on first attorney only
+                                    if (index === 0) {
+                                        console.log('🔍 First attorney full object:', attorney);
+                                        console.log('🔍 All keys in attorney object:', Object.keys(attorney));
+                                        console.log('🆔 Detected attorney ID:', attorneyId);
+                                    }
+                                    
+                                    const statusDisplay = getStatusDisplay(attorney.verificationStatus || 'pending');
+                                    const submittedDate = attorney.submittedForVerificationAt ? new Date(attorney.submittedForVerificationAt) : null;
                                     
                                     return (
-                                        <tr key={attorney.id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={attorneyId || index} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {attorney.fullName}
+                                                {attorney.fullName || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{attorney.attorneyProfile.firmName}</div>
-                                                <div className="text-xs text-gray-500">{attorney.email}</div>
+                                                <div className="text-sm text-gray-900">{attorney.firmName || 'N/A'}</div>
+                                                <div className="text-xs text-gray-500">{attorney.email || 'N/A'}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {attorney.attorneyProfile.yearsOfExperience} yrs
+                                                {attorney.yearsOfExperience || 0} yrs
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {submittedDate ? format(submittedDate, 'MMM dd, yyyy') : 'N/A'}
@@ -182,13 +254,20 @@ const AdminAttorneyVerificationPage: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <Button 
-                                                    onClick={() => handleViewDetails(attorney.id)}
-                                                    variant="ghost"
-                                                    className="text-primary-600 hover:text-primary-900"
-                                                >
-                                                    Review
-                                                </Button>
+                                                {attorneyId ? (
+                                                    <Button 
+                                                        onClick={() => {
+                                                            console.log('🎯 Clicking Review for attorney ID:', attorneyId);
+                                                            handleViewDetails(attorneyId);
+                                                        }}
+                                                        variant="ghost"
+                                                        className="text-primary-600 hover:text-primary-900"
+                                                    >
+                                                        Review
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-xs text-red-600">No ID</span>
+                                                )}
                                             </td>
                                         </tr>
                                 );

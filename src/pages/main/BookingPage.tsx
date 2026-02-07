@@ -10,9 +10,8 @@ import { toApiConsultationMode } from '@/utils/booking-utils'; // Utility to con
 import Input from '@/components/common/Input';
 import Button from '@/components/common/Button';
 import Select from '@/components/common/Select'; 
-import Layout from '@/components/layout/Layout'; // Assuming BookingPage uses a Layout
+import Layout from '@/components/layout/Layout';
 
-// 🛑 CRITICAL FIX: Update ALL type imports to point to their correct consolidated location
 import type { ApiError, ConsultationMode } from '@/types/index'; 
 
 
@@ -26,24 +25,20 @@ interface BookingFormData {
 
 // Options for the duration select field
 const durationOptions = [
-    { value: '30', label: '30 Minutes' },
-    { value: '60', label: '60 Minutes' },
-    { value: '90', label: '90 Minutes' },
+    { value: '30', label: '30 minutes' },
+    { value: '60', label: '60 minutes' },
+    { value: '90', label: '90 minutes' },
 ];
 
 // Options for the consultation mode select field
-// 🎯 FIX: Values must match the string literals in the ConsultationMode type (e.g., 'Video Call')
-// The conversion to API snake_case happens only in the onSubmit handler.
 const modeOptions = [
-    // Assuming 'Video Call' and 'Phone Call' are the accepted ConsultationMode strings from your type definition
-    { value: 'Video Call' as ConsultationMode, label: 'Video Call' },
-    { value: 'Phone Call' as ConsultationMode, label: 'Phone Call (Audio)' },
-    { value: 'In-Person' as ConsultationMode, label: 'In-Person Meeting' },
+    { value: 'Video Call' as ConsultationMode, label: 'Video call' },
+    { value: 'Phone Call' as ConsultationMode, label: 'Phone call' },
+    { value: 'In-Person' as ConsultationMode, label: 'In-person meeting' },
 ];
 
 
 export default function BookingPage() {
-    // Cast the result of useParams for better type safety
     const { id: attorneyId } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
@@ -57,8 +52,8 @@ export default function BookingPage() {
         formState: { errors } 
     } = useForm<BookingFormData>({
         defaultValues: {
-            duration: '60', // Default duration as string
-            consultationMode: 'Video Call', // Default must be a string from ConsultationMode
+            duration: '60',
+            consultationMode: 'Video Call',
             bookingDate: '',
             consultationTopic: '',
         }
@@ -71,37 +66,26 @@ export default function BookingPage() {
         // 1. Prepare data and perform conversions
         const bookingDateTime = new Date(data.bookingDate).toISOString();
         const durationNumber = parseInt(data.duration, 10);
-        
-        // 🎯 FIX: Conversion logic moved INSIDE onSubmit handler where 'data' is in scope
         const apiMode = toApiConsultationMode(data.consultationMode); 
 
         // 2. Call the mutation hook
         createBooking(
             {
-                // Fields required by CreateBookingInput (assuming the hook expects this shape)
                 bookingDate: bookingDateTime,
                 duration: durationNumber, 
                 consultationTopic: data.consultationTopic,
                 bookingType: 'consultation',
-                consultationMode: apiMode, // ✅ NOW USES THE CONVERTED API MODE
+                consultationMode: apiMode,
                 description: "Initial request from client."
             },
             {
                 onSuccess: (res) => {
-                    // Assuming res.data contains { bookingNumber: string, ... }
-                    const bookingNumber = res.data?.bookingNumber;
-                    
                     toast.success(res.message ?? 'Booking request sent successfully!');
 
-                    // Redirect to the newly created booking details page
-                    if (bookingNumber) {
-                        navigate(`/bookings/${bookingNumber}`);
-                    } else {
-                        navigate('/dashboard'); 
-                    }
+                    // Redirect to MyBookingsPage
+                    navigate('/my-bookings');
                 },
                 onError: (error) => {
-                    // Cast error to ApiError for robust error message extraction
                     toast.error(handleApiError(error as ApiError));
                 }
             }
@@ -109,48 +93,69 @@ export default function BookingPage() {
     };
 
     return (
-        <Layout> {/* Wrapping content in Layout for consistency */}
-            <div className="container mx-auto p-8">
-                <h1 className="text-3xl font-bold mb-6 text-gray-900">
-                    Book Consultation with Attorney <span className='text-primary-600'>{attorneyId}</span>
-                </h1>
+        <Layout>
+            <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16 py-12 sm:py-16">
+                <div className="max-w-2xl mx-auto">
+                    <div className="mb-8 sm:mb-12">
+                        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-gray-900">
+                            Book consultation
+                        </h1>
+                        <p className="text-base sm:text-lg text-gray-600">
+                            Schedule a consultation with your selected attorney
+                        </p>
+                    </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-lg bg-white p-6 rounded-lg shadow-lg border border-gray-100">
-                    <Input
-                        label="Preferred Date and Time"
-                        type="datetime-local"
-                        {...register('bookingDate', { required: 'Booking date is required' })}
-                        error={errors.bookingDate?.message}
-                        min={new Date().toISOString().slice(0, 16)} // Prevent booking in the past
-                    />
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100">
+                        <Input
+                            label="Preferred date and time"
+                            type="datetime-local"
+                            {...register('bookingDate', { required: 'Booking date is required' })}
+                            error={errors.bookingDate?.message}
+                            min={new Date().toISOString().slice(0, 16)}
+                        />
 
-                    <Input
-                        label="Consultation Topic"
-                        type="text"
-                        {...register('consultationTopic', { required: 'Topic is required' })}
-                        error={errors.consultationTopic?.message}
-                    />
+                        <Input
+                            label="Consultation topic"
+                            type="text"
+                            {...register('consultationTopic', { required: 'Topic is required' })}
+                            error={errors.consultationTopic?.message}
+                            placeholder="What do you need help with?"
+                        />
 
-                    {/* Duration Field */}
-                    <Select
-                        label="Duration"
-                        options={durationOptions}
-                        {...register('duration', { required: 'Duration is required' })}
-                        error={errors.duration?.message}
-                    />
+                        <Select
+                            label="Duration"
+                            options={durationOptions}
+                            {...register('duration', { required: 'Duration is required' })}
+                            error={errors.duration?.message}
+                        />
 
-                    {/* Consultation Mode Field */}
-                    <Select
-                        label="Consultation Mode"
-                        options={modeOptions}
-                        {...register('consultationMode', { required: 'Mode is required' })}
-                        error={errors.consultationMode?.message}
-                    />
+                        <Select
+                            label="Consultation mode"
+                            options={modeOptions}
+                            {...register('consultationMode', { required: 'Mode is required' })}
+                            error={errors.consultationMode?.message}
+                        />
 
-                    <Button type="submit" disabled={isPending} className="w-full">
-                        {isPending ? 'Requesting...' : 'Submit Booking Request'}
-                    </Button>
-                </form>
+                        <div className="pt-4">
+                            <Button 
+                                type="submit" 
+                                disabled={isPending} 
+                                className="w-full bg-primary-600 hover:bg-primary-700"
+                            >
+                                {isPending ? 'Requesting...' : 'Submit booking request'}
+                            </Button>
+                        </div>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="text-sm text-gray-600 hover:text-gray-900"
+                        >
+                            ← Back to attorney profile
+                        </button>
+                    </div>
+                </div>
             </div>
         </Layout>
     );

@@ -59,6 +59,16 @@ export type ApiResetPasswordInput = {
 
 type ResendOtpInput = { email: string; type: string };
 
+// Admin register input
+type AdminRegisterInput = {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  password: string;
+  confirmPassword: string; // ✅ Added
+  adminCode?: string;
+};
+
 // --- Main Hooks ---
 
 export function useRegister() {
@@ -153,7 +163,6 @@ export function useLogin() {
 
         // --- CORE REDIRECTION LOGIC (IMMEDIATE) ---
         
-        // DEBUGGING: Check the final state
         console.log(`[AUTH] Login successful. User Type: ${user.userType}, Verified: ${user.isEmailVerified}`);
 
         if (!user.isEmailVerified) {
@@ -177,6 +186,101 @@ export function useLogin() {
   });
 }
 
+// 🎯 NEW: Admin Login Hook
+export function useAdminLogin() {
+  const { setAuth } = useAuthStore();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return useMutation<LoginResponse, ApiError, LoginInput>({
+    mutationKey: ['adminLogin'],
+    mutationFn: async (data) => {
+      const response = await apiClient.post<LoginResponse>('/auth/loginadmin', {
+        email: data.email,
+        password: data.password,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const authData = data.data;
+
+      if (data.success && authData && (authData.token || authData.tokens?.accessToken)) {
+        const token = authData.token || authData.tokens!.accessToken;
+        const user = authData.user;
+        
+        setAuth({
+          user,
+          attorney: authData.attorney,
+          individualProfile: authData.individualProfile,
+          businessProfile: authData.businessProfile,
+          token,
+        } as AuthStateData);
+        
+        queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
+
+        console.log(`[ADMIN AUTH] Login successful. User Type: ${user.userType}`);
+
+        // Redirect to admin dashboard
+        navigate('/admin/dashboard', { replace: true });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Admin login error:', error);
+    },
+  });
+}
+
+// 🎯 NEW: Admin Register Hook
+export function useAdminRegister() {
+  const { setAuth } = useAuthStore();
+  const navigate = useNavigate();
+
+  return useMutation<AuthResponse, ApiError, AdminRegisterInput>({
+    mutationKey: ['adminRegister'],
+    mutationFn: async (data) => {
+      let formattedPhone = data.phoneNumber;
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+234' + formattedPhone.substring(1);
+      }
+
+      const registerData = {
+        fullName: data.fullName,
+        email: data.email,
+        phoneNumber: formattedPhone,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        userType: 'fitadmin',
+        // adminCode removed - backend doesn't accept it
+      };
+
+      const response = await apiClient.post<AuthResponse>('/auth/registeradmin', registerData);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        const token = data.data.token || data.data.tokens?.accessToken;
+        
+        if (token) {
+          const { user, attorney, individualProfile, businessProfile } = data.data;
+          
+          setAuth({
+            user,
+            attorney,
+            individualProfile,
+            businessProfile,
+            token,
+          });
+        }
+        
+        console.log('[ADMIN AUTH] Registration successful');
+        
+        // Redirect to admin dashboard
+        navigate('/admin/dashboard', { replace: true });
+      }
+    },
+  });
+}
+
 export function useProfile() {
   const { user } = useAuthStore();
   const userId = user?.id;
@@ -190,9 +294,7 @@ export function useProfile() {
       } catch (error: any) {
         // Handle 404 - endpoint not implemented yet
         if (error.response?.status === 404) {
-          // Removed: console.log('⚠️ Profile endpoint not available, using cached auth data');
           const authState = useAuthStore.getState();
-          // Safely return the cached state if available, assuming the fetch failed due to 404, not auth issue.
           if (authState.user) {
               return {
                   user: authState.user,
@@ -201,7 +303,6 @@ export function useProfile() {
                   businessProfile: authState.businessProfile,
               };
           }
-          // If the profile endpoint truly failed, re-throw the error
           throw error;
         }
         throw error;
@@ -242,7 +343,7 @@ export function useUpdateProfile() {
     },
     onError: (error: any) => {
       if (error.response?.status === 404) {
-        console.error(' Profile update endpoint not available');
+        console.error('Profile update endpoint not available');
       }
     },
   });
@@ -276,7 +377,7 @@ export function useUploadAvatar() {
     },
     onError: (error: any) => {
       if (error.response?.status === 404) {
-        console.error(' Avatar upload endpoint not available');
+        console.error('Avatar upload endpoint not available');
       }
     },
   });
@@ -421,7 +522,6 @@ export function useForgotPassword() {
 export function useResetPassword() {
   const navigate = useNavigate();
 
-  // 🎯 FIX 2: Use the new, unambiguous ApiResetPasswordInput type
   return useMutation<SuccessResponse, ApiError, ApiResetPasswordInput>({
     mutationKey: ['resetPassword'],
     mutationFn: async (data) => {

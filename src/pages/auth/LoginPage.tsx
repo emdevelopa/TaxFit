@@ -131,7 +131,7 @@ export default function LoginPage() {
         {/* Right Side - Image */}
         <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
           <img 
-            src="/Users/user/TaxFit/src/images/attorney.png"
+            src="/public/images/Frame.png"
             alt="Tax attorney consultation"
             className="w-full h-full object-cover opacity-90"
             onError={(e) => {

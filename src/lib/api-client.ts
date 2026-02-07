@@ -128,8 +128,7 @@ apiClient.interceptors.response.use(
       }
     }
     
-    // --- General Error Handling (Non-401 or failed retry) ---
-    
+
     // Check for specific error message structure from backend
     const errors = error.response?.data?.errors;
     const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';

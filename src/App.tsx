@@ -7,6 +7,9 @@ import { useAuthStore } from './store/auth-store';
 import HomePage from './pages/HomePage';
 import ServicesPage from './pages/ServicesPage';
 import AboutPage from './pages/AboutPage';
+import AdminLoginPage from '@/pages/auth/AdminLoginPage';
+import AdminRegisterPage from '@/pages/auth/AdminRegisterPage';
+
 
 // 2. Auth Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -152,6 +155,8 @@ function App() {
       
       {/* Shared Settings Page */}
       <Route path="/profile/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+<Route path="/admin/register" element={<AdminRegisterPage />} />
 
       {/* ----------------------------------------------------- */}
       {/* BOOKING & HIRE ROUTES (Protected) */}

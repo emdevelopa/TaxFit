@@ -245,7 +245,7 @@ export default function RegisterPage() {
         {/* Right Side - Image */}
         <div className="hidden lg:block lg:w-1/2 relative bg-gray-900">
           <img 
-            src="/assets/images/register-bg.jpg"
+            src="/public/images/BG.png"
             alt="Tax attorney services"
             className="w-full h-full object-cover opacity-90"
             onError={(e) => {

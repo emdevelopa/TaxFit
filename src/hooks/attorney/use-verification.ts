@@ -1,5 +1,3 @@
-
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
 import { toast } from 'react-hot-toast';
@@ -27,13 +25,37 @@ interface VerificationStatusResponse {
     };
 }
 
+// ✅ FIXED: Match actual API response structure
 interface AdminVerificationListResponse {
     success: boolean;
     data: {
-        attorneys: Attorney[];
         total: number;
-        totalPages: number;
         page: number;
+        limit: number;
+        totalPages: number;
+        attorneys: Array<{
+            id?: string;            // Some endpoints use 'id'
+            _id?: string;           // Some endpoints use '_id'
+            fullName?: string;      // Direct on list endpoint
+            email?: string;         // Direct on list endpoint
+            phoneNumber?: string;   // Direct on list endpoint
+            user?: {                // Nested on details endpoint
+                fullName: string;
+                email: string;
+                phoneNumber: string;
+            };
+            firmName: string;
+            verificationStatus: string;
+            submittedForVerificationAt?: string;
+            isVerifiedAttorney: boolean;
+            professionalDocuments: Array<{
+                documentType: string;
+                documentUrl: string;
+                uploadedAt: string;
+            }>;
+            hourlyRate: number;
+            yearsOfExperience: number;
+        }>;
     };
 }
 
@@ -44,22 +66,81 @@ interface AdminReviewInput {
     rejectionDetails?: string;
 }
 
+// Details endpoint response with nested user object
 interface AttorneyDetailsResponse {
     success: boolean;
-    data: Attorney;
+    data: {
+        _id: string;
+        user: {
+            fullName: string;
+            email: string;
+            phoneNumber: string;
+        };
+        firmName: string;
+        verificationStatus: string;
+        submittedForVerificationAt?: string;
+        isVerifiedAttorney: boolean;
+        professionalDocuments: Array<{
+            documentType: string;
+            documentUrl: string;
+            uploadedAt: string;
+            verified?: boolean;
+        }>;
+        hourlyRate: number;
+        yearsOfExperience: number;
+        bio?: string;
+        specializations?: string[];
+        location?: string;
+        state?: string;
+    };
 }
 
-export function useAdminVerificationList(filters: AttorneySearchFilters & { page: number; limit: number; status?: string; sortBy?: string; sortOrder?: string; search?: string; }) {
+// ✅ FIXED: Properly handle API response structure with better error handling
+export function useAdminVerificationList(filters: AttorneySearchFilters & { 
+    page: number; 
+    limit: number; 
+    status?: string; 
+    sortBy?: string; 
+    sortOrder?: string; 
+    search?: string; 
+}) {
+    // Remove empty search parameter to avoid backend issues
+    const cleanFilters = { ...filters };
+    if (cleanFilters.search === '') {
+        delete cleanFilters.search;
+    }
     
-    return useQuery<AdminVerificationListResponse['data'], unknown>({
-        queryKey: ['adminVerificationList', filters],
+    // If status is 'all', remove it from params (backend might not handle 'all')
+    if (cleanFilters.status === 'all') {
+        delete cleanFilters.status;
+    }
+    
+    return useQuery<AdminVerificationListResponse['data'], any>({
+        queryKey: ['adminVerificationList', cleanFilters],
         queryFn: async () => {
-            const response = await apiClient.get<AdminVerificationListResponse>('/admin/attorneys/verification', {
-                params: filters,
-            });
-            return response.data.data;
+            try {
+                const response = await apiClient.get<AdminVerificationListResponse>(
+                    '/admin/attorneys/verification', 
+                    {
+                        params: cleanFilters,
+                    }
+                );
+                
+                console.log('✅ Attorney verification list loaded:', response.data);
+                console.log('📋 First attorney structure:', response.data.data.attorneys[0]);
+                console.log('🔑 Attorney ID field:', response.data.data.attorneys[0]?._id || response.data.data.attorneys[0]?.id);
+                
+                return response.data.data;
+            } catch (error: any) {
+                console.error('❌ Failed to load attorney verification list:', error);
+                console.error('Request params:', cleanFilters);
+                console.error('Error details:', error.response?.data);
+                throw error;
+            }
         },
-        staleTime: 60 * 1000, 
+        staleTime: 60 * 1000,
+        retry: false, // Don't retry on 500 errors
+        refetchOnWindowFocus: false, // Don't refetch on window focus
     });
 }
 
@@ -72,7 +153,6 @@ export function useSubmitVerification() {
             return response.data;
         },
         onSuccess: () => {
-            // Invalidate status so the component fetches the new 'pending' status
             queryClient.invalidateQueries({ queryKey: ['attorneyVerificationStatus'] });
             toast.success('Verification request submitted!');
         },
@@ -85,7 +165,6 @@ export function useSubmitVerification() {
 export function useUploadDocument() {
     const queryClient = useQueryClient();
     
-    // NOTE: Mutation payload type depends on how you handle File objects/FormData
     return useMutation<AuthResponse, unknown, FormData>({
         mutationFn: async (formData) => {
             const response = await apiClient.post<AuthResponse>('/attorney/upload-document', formData, {
@@ -105,17 +184,44 @@ export function useUploadDocument() {
     });
 }
 
-export function useAdminAttorneyDetails(attorneyId: string) {
-    const isEnabled = !!attorneyId;
+export function useAdminAttorneyDetails(attorneyId: string, options?: { enabled?: boolean }) {
+    const isEnabled = options?.enabled !== false && !!attorneyId;
     
     return useQuery<AttorneyDetailsResponse['data'], unknown>({
         queryKey: ['attorneyDetails', attorneyId],
         queryFn: async () => {
-            const response = await apiClient.get<AttorneyDetailsResponse>(`/admin/attorneys/${attorneyId}/verification`);
-            return response.data.data;
+            try {
+                console.log('🔍 Fetching attorney details for ID:', attorneyId);
+                console.log('📡 Full endpoint URL:', `/admin/attorneys/${attorneyId}/verification`);
+                
+                const response = await apiClient.get<AttorneyDetailsResponse>(
+                    `/admin/attorneys/${attorneyId}/verification`
+                );
+                
+                console.log('✅ Attorney details loaded:', response.data);
+                return response.data.data;
+            } catch (error: any) {
+                console.error('❌ Failed to load attorney details');
+                console.error('Attorney ID:', attorneyId);
+                console.error('Error status:', error.response?.status);
+                console.error('Error message:', error.response?.data?.message);
+                console.error('Full error response:', error.response?.data);
+                
+                // If 404, the attorney might not exist or endpoint is wrong
+                if (error.response?.status === 404) {
+                    console.error('🔴 404 Error - Possible reasons:');
+                    console.error('  1. Attorney with this ID does not exist in database');
+                    console.error('  2. Attorney has not submitted for verification yet');
+                    console.error('  3. Endpoint path is incorrect (check backend routes)');
+                    console.error('  4. Attorney ID format is incorrect');
+                }
+                
+                throw error;
+            }
         },
         enabled: isEnabled,
-        staleTime: 5 * 60 * 1000, 
+        staleTime: 5 * 60 * 1000,
+        retry: false, // Don't retry 404s
     });
 }
 
@@ -124,8 +230,25 @@ export function useReviewVerification() {
 
     return useMutation<AuthResponse, unknown, { attorneyId: string, data: AdminReviewInput }>({
         mutationFn: async ({ attorneyId, data }) => {
-            const response = await apiClient.put<AuthResponse>(`/admin/attorneys/${attorneyId}/verification/review`, data);
-            return response.data;
+            try {
+                console.log('🎯 Submitting review for attorney:', attorneyId);
+                console.log('📝 Review data:', data);
+                
+                // ✅ FIXED: Correct endpoint path with /review
+                const response = await apiClient.put<AuthResponse>(
+                    `/admin/attorneys/${attorneyId}/verification/review`, 
+                    data
+                );
+                
+                console.log('✅ Review submitted successfully:', response.data);
+                return response.data;
+            } catch (error: any) {
+                console.error('❌ Failed to submit review:', error);
+                console.error('Attorney ID:', attorneyId);
+                console.error('Review data:', data);
+                console.error('Error details:', error.response?.data);
+                throw error;
+            }
         },
         onSuccess: (data, variables) => {
             toast.success(data.message || 'Verification status updated successfully!');
@@ -145,14 +268,6 @@ export function useVerificationStatus() {
             const response = await apiClient.get<VerificationStatusResponse>('/attorney/verification-status');
             return response.data.data;
         },
-        // We typically refetch frequently on a status page
-        staleTime: 30 * 1000, // 30 seconds
-        // onError: (error) => {
-        //     // Error here might mean the user isn't an attorney or a server error
-        //     console.error("Failed to fetch verification status:", error);
-        //     // This toast is often suppressed on the status page itself, 
-        //     // but included here for hook integrity.
-        //     // toast.error(handleApiError(error) ?? "Could not retrieve verification status.");
-        // }
+        staleTime: 30 * 1000,
     });
 }

@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Loader2, Scale, Users, Building2, Briefcase } fro
 import Button from '@/components/common/Button';
 import { formatDate } from '@/utils/helpers'; 
 import { useFirsRegulatoryUpdates } from '@/hooks/attorney/use-firs-resources';
+import Marquee from "react-fast-marquee"
 
 // Company logos
 const trustedCompanies = [
@@ -83,6 +84,16 @@ const caseStudies = [
 export default function HomePage() {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [activeFirsIndex, setActiveFirsIndex] = useState(0);
+  const [currentIndex,setCurrentIndex]=useState(0);
+  const [herotext, setHeroText] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % imageMap.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
   const navigate = useNavigate();
 
   const { data: firsUpdates, isLoading: isFirsLoading } = useFirsRegulatoryUpdates({ search: '', source: 'all' });
@@ -92,7 +103,7 @@ export default function HomePage() {
   useEffect(() => {
     const testimonialInterval = setInterval(() => {
       setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
-    }, 8000);
+    }, 1000);
 
     let firsInterval: number | undefined;
     
@@ -109,60 +120,60 @@ export default function HomePage() {
       }
     };
   }, [slideshowUpdates.length]);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroText('Access Nigerias largest Network of tax attorneys whether your needs are planning,auditing, compliance, etc from the perfect group of tax attorneys. Our attorneys are the best of the best with various attorneys from the Nigerian Barrister Association.')
+    }, 1000)
+    return () => clearInterval(interval);
+  }, []);
+
+  const imageMap = [
+    {id:1, src: "public/images/attorney.png"},
+    {id:2, src: "public/images/image-14.png"},
+  ] 
 
   return (
     <Layout>
+      <Marquee>
+        Access Nigerias largest Network of tax attorneys whether your needs are planning,auditing, compliance, etc from the perfect group of tax attorneys.         ||         Our attorneys are the best of the best with various attorneys from the Nigerian Barrister Association.
+      </Marquee>
       {/* Hero Section - Dark Blue Background */}
-      <section className="relative min-h-[85vh] flex items-center bg-gradient-to-br from-primary-900 via-primary-800 to-secondary-900 text-white overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-            backgroundSize: '40px 40px'
-          }}></div>
-        </div>
+      <section className="relative min-h-[130vh] flex items-center text-white overflow-hidden bg-black">
+  
+          <img 
+  key={currentIndex} 
+  src={imageMap[currentIndex].src} 
+  alt={`Professional tax attorney ${currentIndex + 1}`} 
+  className="absolute inset-0 w-full h-full object-cover opacity-20 transition-5" 
+/>
+  
 
-        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16 relative z-10 py-12">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="container mx-auto px-4 sm:px-6 md:px-12 lg:px-16 relative z-10 py-12 ">
+          <div className="max-w-4xl text-left">
             {/* Main Heading */}
             <div className="space-y-6 sm:space-y-8 mb-8 sm:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight px-4">
-                Connect with Nigeria's
+                Connect with Attorneys
                 <span className="block mt-2 bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-                  Top Tax Attorneys
+                  from over 36 states
                 </span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-gray-200 font-light max-w-3xl mx-auto leading-relaxed px-4">
-                Expert legal guidance for all your tax needs. Book consultations with verified, 
-                experienced tax attorneys tailored to your specific requirements.
+              <p className="text-base sm:text-lg md:text-xl text-gray-200 font-light max-w-3xl leading-relaxed px-4">
+                Get expert help and Optimize your taxes,
+                Here at Tax-FIT
               </p>
             </div>
 
             {/* CTA Button */}
-            <div className="flex justify-center mb-12 sm:mb-16 px-4">
+            <div className="flex justify-left mb-12 sm:mb-16 px-4">
               <button 
                 onClick={() => navigate('/find-attorney')}
-                className="group px-8 sm:px-12 py-4 sm:py-5 bg-white text-primary-900 rounded-lg font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
+                className="group px-8 sm:px-12 py-4 sm:py-5 bg-black bg-opacity-10 border hover:bg-opacity-20 text-white text-primary-900 rounded-lg font-bold text-base sm:text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 inline-flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-center"
               >
-                Find Attorney
+                Look Through our Attorney
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-            </div>
-
-            {/* Stats - Smaller */}
-            <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-3xl mx-auto pt-8 sm:pt-12 border-t border-white/20 px-4">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">2,500+</div>
-                <div className="text-xs sm:text-sm text-gray-300">Verified attorneys</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">50K+</div>
-                <div className="text-xs sm:text-sm text-gray-300">Cases resolved</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2">98%</div>
-                <div className="text-xs sm:text-sm text-gray-300">Satisfaction</div>
-              </div>
             </div>
           </div>
         </div>
@@ -176,7 +187,7 @@ export default function HomePage() {
               {/* Image */}
               <div className="relative order-2 lg:order-1">
                 <img 
-                  src="/assets/images/attorney-consultation.jpg"
+                  src="../../public/images/attorney-consultation.jpg"
                   alt="Professional tax attorney consultation"
                   className="w-full h-64 sm:h-80 md:h-96 object-cover rounded-2xl shadow-2xl"
                   onError={(e) => {
@@ -221,7 +232,7 @@ export default function HomePage() {
                     onClick={() => navigate('/find-attorney')}
                     className="px-5 py-3 sm:px-6 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition-all duration-300 w-full sm:w-auto"
                   >
-                    Find attorney
+                    Look Through our Attorney
                   </button>
                   <button 
                     onClick={() => navigate('/about')}
@@ -487,7 +498,7 @@ export default function HomePage() {
 
               <div className="flex justify-center gap-2 sm:gap-3 mt-6 sm:mt-8">
                 {testimonials.map((_, index) => (
-                  <button
+                  <Button
                     key={index}
                     onClick={() => setActiveTestimonial(index)}
                     className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${

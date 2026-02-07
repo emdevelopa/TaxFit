@@ -8,6 +8,10 @@
   height: 8px;
 }
 
+body {
+  font-family: "mont-serrat", sans-serif;
+}
+
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
@@ -245,3 +249,5 @@ html {
   animation: border-spin 3s linear infinite;
   z-index: -1;
 }
+
+
