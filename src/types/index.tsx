@@ -1,7 +1,32 @@
+// =============================================================
+// src/types/index.ts
+// AttorneyProfile and related types come from ./attorney.ts
+// =============================================================
 
-export type UserType = 'individual' | 'attorney' | 'business'| 'admin';
+// ✅ Import the DETAILED AttorneyProfile from attorney.ts
+import type { 
+  AttorneyProfile as DetailedAttorneyProfile,
+  AttorneySearchResultItem as DetailedAttorneySearchResultItem,
+} from './attorney';
+
+// ✅ Re-export all attorney types so imports from '@/types' still work
+export type {
+  AttorneyAvailability,
+  AttorneyCertification,
+  AttorneyEducation,
+  AttorneySearchResultItem,
+  GetAttorneysResponse,
+} from './attorney';
+
+// ✅ Re-export AttorneyProfile as the DETAILED version
+export type AttorneyProfile = DetailedAttorneyProfile;
+
+// --- Core Types ---
+
+export type UserType = 'individual' | 'attorney' | 'business' | 'admin' | 'fitadmin';
 export type EmploymentStatus = 'employed' | 'self-employed' | 'unemployed' | 'student' | 'retired';
 export type ConsultationMode = 'In-Person' | 'Video Call' | 'Phone Call' | 'chat';
+
 export interface User {
   id: string;
   fullName: string;
@@ -24,45 +49,13 @@ export interface Address {
   postalCode?: string;
 }
 
-// --- Profile Interfaces (Detailed) ---
-
-export interface AttorneyProfile {
-  firmName: string;
-  yearsOfExperience: number;
-  hourlyRate: number;
-  specializations?: string[];
-  professionalLicenseNumber?: string;
-  verificationStatus?: 'draft' | 'pending' | 'approved' | 'rejected';
-  bio?: string;
-  location?: string;
-  state?: string;
-  rating?: number;
-  totalCases?: number;
-  successRate?: number;
-  submittedForVerificationAt?: string;
-  rejectionReason?: string;
-  rejectionDetails?: string;
-  professionalDocuments?: any[];
-  education?: {
-        institution: string;
-        degree: string;
-        year: number;
-    }[];
-
-    certifications?: {
-        name: string;
-        issuer: string;
-        year: number;
-    }[];
-    totalReviews?: number; 
-    averageRating?: number;
-}
+// --- Non-Attorney Profile Types ---
 
 export interface IndividualProfile {
   employmentStatus: EmploymentStatus;
   occupation: string;
   dateOfBirth?: string;
-  address?: string; // Consider using the Address interface here instead of string
+  address?: string;
   taxId?: string;
 }
 
@@ -75,23 +68,22 @@ export interface BusinessProfile {
   numberOfEmployees?: number;
 }
 
-// --- Auth and API Response Structure ---
+// --- Auth & API Response Types ---
 
-// Defines the consistent payload structure for user data (used by AuthResponse/LoginResponse/ProfileResponse)
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AuthResponseData {
   user: User;
   attorney?: AttorneyProfile;
   individualProfile?: IndividualProfile;
   businessProfile?: BusinessProfile;
-  token?: string; // Token might be top-level or nested depending on the endpoint
+  token?: string;
   tokens?: AuthTokens;
   requiresEmailVerification?: boolean;
-  bookingNumber: string;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
+  bookingNumber?: string;
 }
 
 export interface AuthResponse {
@@ -103,7 +95,7 @@ export interface AuthResponse {
 export interface LoginResponse {
   success: boolean;
   message?: string;
-  data: Omit<AuthResponseData, 'token'> & { token: string }; 
+  data: AuthResponseData;
 }
 
 export interface ProfileResponse {
@@ -127,12 +119,12 @@ export interface RegisterInput {
   userType: UserType;
   acceptTerms: boolean;
   referralCode?: string;
-  // Attorney-specific fields
+  // Attorney-specific
   firmName?: string;
   yearsOfExperience?: number;
   hourlyRate?: number;
   professionalLicenseNumber?: string;
-  // Individual-specific fields
+  // Individual-specific
   employmentStatus?: EmploymentStatus;
   occupation?: string;
 }
@@ -159,24 +151,20 @@ export interface ProfileUpdateInput {
   bio?: string;
   specializations?: string[];
   education?: {
-        institution: string;
-        degree: string;
-        year: number;
-    }[];
-
-    certifications?: {
-        name: string;
-        issuer: string;
-        year: number;
-    }[];
+    institution: string;
+    degree: string;
+    year: number;
+  }[];
+  certifications?: {
+    name: string;
+    issuer: string;
+    year: number;
+  }[];
 }
 
-export interface AttorneySearchResultItem extends User {
-  attorneyProfile: AttorneyProfile; 
-}
+// --- Attorney Search Types ---
 
-export type Attorney = AttorneySearchResultItem;
-
+export type Attorney = DetailedAttorneySearchResultItem;
 
 export interface AttorneySearchFilters {
   searchQuery?: string;
@@ -187,14 +175,18 @@ export interface AttorneySearchFilters {
   rating?: number;
   page: number;
   limit: number;
+  status?: string;
+  search?: string;
 }
 
 export interface AttorneySearchResult {
-  attorneys: Attorney[]; 
+  attorneys: Attorney[];
   total: number;
   hasMore: boolean;
   limit: number;
 }
+
+// --- Payout Types ---
 
 export interface PayoutRequest {
   payoutId: string;
@@ -214,7 +206,6 @@ export interface PayoutListResult {
   payouts: PayoutRequest[];
 }
 
-// Query filter interface for Payouts
 export interface PayoutFilters {
   status?: 'pending' | 'processed' | 'failed' | 'all';
   page: number;
@@ -222,8 +213,38 @@ export interface PayoutFilters {
   search?: string;
 }
 
-// --- Legacy/Misc Types ---
+// --- Generic API Types ---
 
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  errors?: string[] | { [key: string]: string };
+}
+
+export interface ApiError {
+  response?: {
+    data?: ApiErrorResponse;
+    status?: number;
+    statusText?: string;
+  };
+  message: string;
+  isAxiosError?: boolean;
+}
+
+export interface PaginatedResponse {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+}
+
+export interface ApiResponse<T> {
+  message: string;
+  status: number;
+  data: T;
+}
+
+// --- Legacy aliases ---
 export type IUserType = UserType;
 
 export interface ITaxBenefit {
@@ -233,77 +254,3 @@ export interface ITaxBenefit {
   amount: number;
   category: string;
 }
-
-export interface ApiErrorResponse {
-    success: false;
-    message: string;
-    errors?: string[] | { [key: string]: string }; // Optional field for validation errors
-}
-
-
-export interface ApiError extends Error {
-    response?: {
-        data: ApiErrorResponse;
-        status: number;
-        statusText: string;
-    };
-    // Include other Axios error properties like code, config, etc., if needed
-    isAxiosError: boolean;
-    name: string;
-    message: string;
-}
-
-// src/types/index.ts (Conceptual content for your main type file)
-
-// --- Standard Response Structures ---
-
-/**
- * Interface for standard API errors.
- */
-export interface ApiError {
-    message: string;
-    status: number;
-    details?: string | Record<string, any>;
-}
-
-/**
- * Generic Interface for standard pagination metadata.
- */
-export interface PaginatedResponse {
-    currentPage: number;
-    totalPages: number;
-    pageSize: number;
-    totalItems: number;
-}
-
-/**
- * The standard, generic API response wrapper for non-authentication endpoints.
- * T is the type of the data payload contained within the 'data' field.
- * * This should replace the incorrect extension of 'AuthResponse' in your hooks.
- */
-export interface ApiResponse<T> {
-    message: string;
-    status: number;
-    data: T;
-}
-
-
-
-// --- Specific Data Payloads ---
-
-// You would need to define all the specific data types here, for example:
-// export type ConsultationMode = 'In-Person' | 'Video Call' | 'Phone Call';
-// export interface User { /* ... fields ... */ }
-// export interface Booking { /* ... fields ... */ }
-// export interface Expense { /* ... fields ... */ }
-
-// --- Example of how the Auth Response should be structured (to avoid inheritance issues) ---
-
-// export interface AuthResponseData { 
-//     user: User; 
-//     token: string;
-//     bookingNumber?: string; // Should be optional if sometimes included
-// }
-// export interface AuthResponse extends ApiResponse<AuthResponseData> {} 
-
-// --- END OF TYPES FILE ---

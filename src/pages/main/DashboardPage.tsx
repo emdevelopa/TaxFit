@@ -1,5 +1,3 @@
-// src/pages/main/DashboardPage.tsx (WITH BOOKING SECTION ADDED)
-
 import React from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth-store';
@@ -8,7 +6,7 @@ import { useUserBookings } from '@/hooks/booking/use-booking-management'; // �
 
 import { 
   TrendingUp, DollarSign, FileText, Loader2, Calculator, Users,
-  CreditCard, ArrowRight, Calendar, // 🎯 Calendar and ArrowRight added
+  CreditCard, ArrowRight, Calendar,
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Avatar from '@/components/common/Avatar';
@@ -18,25 +16,15 @@ import Button from '@/components/common/Button';
 import BookingCard from '@/components/bookings/BookingCard'; 
 
 
-// --- START: General User Dashboard Content (Kept as the default view) ---
 const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
-    const navigate = useNavigate(); // For button navigation
+    const navigate = useNavigate(); 
     const firstName = userData?.fullName?.split(' ')[0] || 'User';
 
-    // 🎯 BOOKING HOOK: Fetch the user's upcoming bookings (limit 3 for dashboard)
     const { data: bookings, isLoading: isLoadingBookings } = useUserBookings('all', 1, 3);
     
-    // Filter for pending/confirmed bookings to display as upcoming
     const upcomingBookings = bookings?.filter(b => b.status === 'pending' || b.status === 'confirmed');
 
-    // Mock data for the general user dashboard stats (placeholder)
-    const mockGeneralStats = {
-        totalExpenses: 550000,
-        taxSaved: 120000,
-        activeLoans: 0
-    };
     
-    // --- Helper Component for Quick Action Links ---
     const QuickActionButton: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
         <Link 
             to={to} 
@@ -55,7 +43,6 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
         <Layout>
             <div className="min-h-screen bg-gray-50">
                 <div className="container mx-auto px-4 py-8">
-                    {/* Welcome Header */}
                     <div className="mb-8">
                         <div className="flex items-center gap-4 mb-4">
                             <Avatar
@@ -64,20 +51,16 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                                 size="lg"
                             />
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">
+                                <h1 className="text-xl font-semibold text-gray-900">
                                     Welcome back, {firstName}!
                                 </h1>
                                 <p className="text-gray-600">Here's your tax overview</p>
                             </div>
                         </div>
                     </div>
-
-                    {/* ----------------------------------------------------- */}
-                    {/* 🎯 UPCOMING CONSULTATIONS / BOOKINGS SECTION (NEW) */}
-                    {/* ----------------------------------------------------- */}
                     <section className="mt-8 mb-10">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-3">
+                            <h2 className="text-xl  text-gray-800 flex items-center gap-3">
                                 <Calendar className="w-6 h-6 text-primary-600" />
                                 Your Upcoming Consultations
                             </h2>
@@ -85,9 +68,9 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                                 variant="link" 
                                 size="sm"
                                 onClick={() => navigate('/bookings/my-bookings')}
-                                rightIcon={<ArrowRight className="w-4 h-4 ml-1" />}
+                                rightIcon={<ArrowRight className="w-2 h-2 ml-1" />}
                             >
-                                View All Bookings
+                                see bookings
                             </Button>
                         </div>
 
@@ -98,37 +81,29 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                             </div>
                         ) : upcomingBookings && upcomingBookings.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {/* Map over the upcoming bookings and render BookingCard */}
                                 {upcomingBookings.map(booking => (
                                     <BookingCard key={booking._id} booking={booking} />
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-8 bg-white border border-dashed border-gray-300 rounded-lg text-center">
+                            <div className="p-4 bg-white border border-dashed border-gray-300 rounded-lg text-center">
                                 <p className="text-lg text-gray-600 mb-4">
                                     You don't have any pending or confirmed consultations.
                                 </p>
                                 <Button 
                                     onClick={() => navigate('/find-attorney')} 
-                                    variant="primary"
-                                    size="md"
+                                    size="sm"
                                 >
                                     Find and Book an Attorney
                                 </Button>
                             </div>
                         )}
                     </section>
-                    
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                          <Card hover>
-                            {/* ... (Total Expenses content remains the same) ... */}
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="text-gray-600 text-sm mb-2">Total Expenses</div>
-                                    <div className="text-3xl font-bold text-primary-600">
-                                        {formatCurrency(mockGeneralStats.totalExpenses)}
-                                    </div>
                                     <div className="text-sm text-green-600 mt-1">
                                         +0% from last month
                                     </div>
@@ -139,32 +114,12 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                             </div>
                         </Card>
 
-                        <Card hover>
-                            {/* ... (Active Loans content remains the same) ... */}
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <div className="text-gray-600 text-sm mb-2">Active Loans</div>
-                                    <div className="text-3xl font-bold text-secondary-600">
-                                        {mockGeneralStats.activeLoans}
-                                    </div>
-                                    <div className="text-sm text-gray-600 mt-1">
-                                        {mockGeneralStats.activeLoans > 0 ? 'Review status' : 'No active loans'}
-                                    </div>
-                                </div>
-                                <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center">
-                                    <FileText className="w-6 h-6 text-secondary-600" />
-                                </div>
-                            </div>
-                        </Card>
 
                         <Card hover>
                             {/* ... (Tax Saved content remains the same) ... */}
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="text-gray-600 text-sm mb-2">Tax Saved</div>
-                                    <div className="text-3xl font-bold text-green-600">
-                                        {formatCurrency(mockGeneralStats.taxSaved)}
-                                    </div>
                                     <div className="text-sm text-green-600 mt-1">
                                         This year (estimated)
                                     </div>
@@ -175,13 +130,10 @@ const GeneralDashboardContent: React.FC<{ userData: any }> = ({ userData }) => {
                             </div>
                         </Card>
                     </div>
-
-                    {/* Quick Actions & Recent Activity */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <Card>
                             <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
                             <div className="space-y-3">
-                                {/* IMPLEMENTED QUICK ACTIONS */}
                                 <QuickActionButton 
                                     to="/expenses"
                                     icon={<DollarSign className="w-4 h-4" />}

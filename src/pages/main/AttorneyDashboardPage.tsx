@@ -2,25 +2,28 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth-store';
 import { useProfile } from '@/hooks/auth/use-auth';
+import { useVerificationStatus } from '@/hooks/attorney/use-verification';
 import { 
   TrendingUp, 
   DollarSign, 
   FileText, 
   Loader2, 
-  Users, // Used for Clients
-  Clock, // Used for Billable Hours
-  BarChart3, // Used for Revenue
-  CheckCircle, // Used for Tasks
-  UserCheck, // Used for Profile completion
+  Users,
+  Clock,
+  BarChart3,
+  CheckCircle,
+  UserCheck,
   ArrowRight,
+  Shield,
+  XCircle,
+
 } from 'lucide-react';
 import Card from '@/components/common/Card';
 import Avatar from '@/components/common/Avatar';
 import { formatCurrency } from '@/utils/helpers';
 import Layout from '@/components/layout/Layout';
 
-// --- MOCK DATA FOR ATTORNEY METRICS ---
-// In a real app, this would be fetched via a useAttorneyMetrics query
+// --- MOCK DATA ---
 interface AttorneyMetrics {
     billableHours: number;
     activeClients: number;
@@ -31,15 +34,91 @@ interface AttorneyMetrics {
 const mockAttorneyMetrics: AttorneyMetrics = {
     billableHours: 125.5,
     activeClients: 12,
-    totalRevenue: 5_250_000, // NGN 5.25 Million
+    totalRevenue: 5_250_000,
     pendingTasks: 5,
 };
 
-export default function AttorneyDashboardPage() {
-  const { user } = useAuthStore();
-  const { data: profile, isLoading } = useProfile();
+// --- VERIFICATION BANNER COMPONENT ---
+function VerificationBanner({ status, rejectionReason }: { status: string; rejectionReason?: string }) {
+  if (status === 'approved') return null; // Don't show banner if already verified
 
-  if (isLoading) {
+  const configs: Record<string, {
+    bg: string;
+    border: string;
+    iconBg: string;
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    ctaText: string;
+    ctaLink: string;
+    ctaColor: string;
+  }> = {
+    draft: {
+      bg: 'bg-gradient-to-r from-amber-50 to-orange-50',
+      border: 'border-amber-200',
+      iconBg: 'bg-amber-100',
+      icon: <Shield className="w-6 h-6 text-amber-600" />,
+      title: 'Get Verified to Start Accepting Clients',
+      description: 'Submit your professional credentials and documents to get verified. Verified attorneys appear in search results and can accept bookings.',
+      ctaText: 'Start Verification',
+      ctaLink: '/attorney/verification',
+      ctaColor: 'bg-amber-600 hover:bg-amber-700',
+    },
+    pending: {
+      bg: 'bg-gradient-to-r from-blue-50 to-indigo-50',
+      border: 'border-blue-200',
+      iconBg: 'bg-blue-100',
+      icon: <Clock className="w-6 h-6 text-blue-600" />,
+      title: 'Verification Under Review',
+      description: 'Your submission is being reviewed by our admin team. This typically takes 1-3 business days. We\'ll notify you once the review is complete.',
+      ctaText: 'View Status',
+      ctaLink: '/attorney/verification',
+      ctaColor: 'bg-blue-600 hover:bg-blue-700',
+    },
+    rejected: {
+      bg: 'bg-gradient-to-r from-red-50 to-rose-50',
+      border: 'border-red-200',
+      iconBg: 'bg-red-100',
+      icon: <XCircle className="w-6 h-6 text-red-600" />,
+      title: 'Verification Needs Attention',
+      description: rejectionReason || 'Your verification was not approved. Please review the feedback and resubmit your application.',
+      ctaText: 'Fix & Resubmit',
+      ctaLink: '/attorney/verification',
+      ctaColor: 'bg-red-600 hover:bg-red-700',
+    },
+  };
+
+  const config = configs[status] || configs.draft;
+
+  return (
+    <div className={`${config.bg} ${config.border} border rounded-xl p-6 mb-8`}>
+      <div className="flex flex-col sm:flex-row items-start gap-4">
+        <div className={`${config.iconBg} w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`}>
+          {config.icon}
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 text-lg">{config.title}</h3>
+          <p className="text-gray-600 text-sm mt-1">{config.description}</p>
+        </div>
+        <Link
+          to={config.ctaLink}
+          className={`${config.ctaColor} text-white px-5 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-colors flex-shrink-0 mt-2 sm:mt-0`}
+        >
+          {config.ctaText}
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN DASHBOARD COMPONENT ---
+export default function AttorneyDashboardContent() {
+  const { user } = useAuthStore();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { data: verificationData, isLoading: verificationLoading } = useVerificationStatus();
+
+  if (profileLoading) {
     return (
       <Layout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -49,14 +128,14 @@ export default function AttorneyDashboardPage() {
     );
   }
 
-  // Use the profile data safely
   const userData = profile?.user || user;
   const attorneyProfile = profile?.attorney;
   const firstName = userData?.fullName?.split(' ')[0] || 'Attorney';
   const firmName = attorneyProfile?.firmName;
   const hourlyRate = attorneyProfile?.hourlyRate;
+  const isVerified = attorneyProfile?.isVerifiedAttorney;
+  const verificationStatus = verificationData?.verificationStatus || (isVerified ? 'approved' : 'draft');
   
-  // Example metric access
   const metrics = mockAttorneyMetrics;
 
   return (
@@ -68,20 +147,35 @@ export default function AttorneyDashboardPage() {
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-4">
               <Avatar
-                src={userData?.avatarUrl || undefined }
+                src={userData?.avatarUrl || undefined}
                 name={userData?.fullName || 'Attorney'}
                 size="lg"
               />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Welcome, {firstName}!
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    Welcome, {firstName}!
+                  </h1>
+                  {isVerified && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                      <CheckCircle className="w-3.5 h-3.5" /> Verified
+                    </span>
+                  )}
+                </div>
                 <p className="text-gray-600">
-                    {firmName ? `Managing Dashboard for ${firmName}` : "Attorney Practice Overview"}
+                  {firmName ? `Managing Dashboard for ${firmName}` : "Attorney Practice Overview"}
                 </p>
               </div>
             </div>
           </div>
+
+          {/* ✅ VERIFICATION STATUS BANNER */}
+          {!verificationLoading && (
+            <VerificationBanner 
+              status={verificationStatus} 
+              rejectionReason={verificationData?.rejectionReason}
+            />
+          )}
 
           {/* Practice Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -132,7 +226,7 @@ export default function AttorneyDashboardPage() {
               </div>
             </Card>
             
-             <Card hover>
+            <Card hover>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-gray-600 text-sm mb-2">Pending Tasks</div>
@@ -153,6 +247,22 @@ export default function AttorneyDashboardPage() {
             <Card>
               <h2 className="text-xl font-semibold mb-4">Practice Management</h2>
               <div className="space-y-3">
+                {/* Verification Link (shown when not verified) */}
+                {!isVerified && (
+                  <Link
+                    to="/attorney/verification"
+                    className="block px-4 py-3 border-2 border-amber-300 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-amber-900">🛡️ Complete Verification</div>
+                        <div className="text-sm text-amber-700">Get verified to appear in search results and accept clients.</div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-amber-600 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                )}
+
                 <Link
                   to="/attorney/clients"
                   className="block px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors group"
@@ -230,7 +340,7 @@ export default function AttorneyDashboardPage() {
                   <h3 className="font-semibold text-gray-900">Increase Your Visibility</h3>
                 </div>
                 <p className="text-gray-700 mb-4">
-                  Your profile completion is **75%**. Complete your bio and add specializations to attract more high-value clients.
+                  Complete your bio and add specializations to attract more high-value clients.
                 </p>
                 <Link
                   to="/profile/settings"

@@ -24,28 +24,21 @@ export interface AttorneyEducation {
 
 export interface AttorneyProfile {
   _id: string;
-
   firmName: string;
   yearsOfExperience: number;
   specializations: string[];
   areasOfPractice: string[];
-
   hourlyRate: number;
   consultationFee?: number;
-
   minConsultationDuration: number;
   maxConsultationDuration: number;
-
   professionalLicenseNumber: string;
-
   availability: AttorneyAvailability;
-
   averageRating: number;
   totalReviews: number;
   completedConsultations: number;
   responseRate: number;
   averageResponseTime: number | null;
-
   totalEarnings: number;
   pendingWithdrawal: number;
   walletBalance: number;
@@ -88,7 +81,6 @@ export interface AttorneySearchResultItem {
   avatarUrl: string | null;
   isPremium: boolean;
   createdAt: string;
-
   attorneyProfile: AttorneyProfile;
 }
 

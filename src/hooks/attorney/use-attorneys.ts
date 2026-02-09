@@ -6,7 +6,7 @@ import type { AttorneySearchResultItem, GetAttorneysResponse } from '@/types/att
 
 export function useAttorneys() {
   return useQuery<AttorneySearchResultItem[]>({
-    queryKey: ['verified-attorneys'],
+    queryKey: ['attorneys'],
 
     queryFn: async () => {
       const res = await apiClient.get<GetAttorneysResponse>(

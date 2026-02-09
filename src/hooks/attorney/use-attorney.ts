@@ -8,7 +8,6 @@ import type {
     AuthResponse, 
     ProfileUpdateInput, // This type must now include education/certifications arrays
     Attorney,
-    User
 } from '@/types'; 
 // Assuming AttorneyDetailsResponse is imported from use-verification or defined locally
 interface AttorneyDetailsResponse {
@@ -36,11 +35,8 @@ export function useUpdateProfile() {
             bio: data.bio,
             hourlyRate: data.hourlyRate,
             specializations: data.specializations,
-            
-            // --- FIX: ADDED NEW COMPLEX FIELDS ---
             education: data.education, 
             certifications: data.certifications,
-            // ------------------------------------
         });
 
     return useMutation<AuthResponse, unknown, ProfileUpdateInput>({

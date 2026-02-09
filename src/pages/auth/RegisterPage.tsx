@@ -54,12 +54,7 @@ export default function RegisterPage() {
           <div className="w-full max-w-2xl">
             {/* Header */}
             <div className="mb-8 sm:mb-12 space-y-4 sm:space-y-6">
-              <div className="flex items-center gap-4">
-                <div className="h-px w-12 bg-primary-500"></div>
-                <span className="text-xs text-gray-500 font-medium">
-                  New account
-                </span>
-              </div>
+
 
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
                 Begin your
